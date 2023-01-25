@@ -113,7 +113,7 @@ booting:
 error:
     mov si, .msg
     call print
-    hlt;
+    hlt;让cpu停止
     jmp $
     .msg db "Booting Error!!!", 10,13,0
 
