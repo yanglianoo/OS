@@ -14,7 +14,7 @@ mov sp, 0x7c00
 mov si, booting
 call print
 
-xchg bx, bx; bochs 魔术断点
+
 
 mov edi, 0x1000;读取的目标内存
 mov ecx, 2;起始扇区
@@ -117,9 +117,8 @@ error:
     jmp $
     .msg db "Booting Error!!!", 10,13,0
 
-;阻塞
-jmp $
 
+; 填充 0
 times 510 - ($ - $$) db 0
 
 ;主引导扇区的最后两个字节必须是 0x55,0xaa
