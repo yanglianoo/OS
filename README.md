@@ -40,3 +40,8 @@
 |    DS    | 数据段寄存器 |
 |    FS    |   没有名称   |
 |    GS    |   没有名称   |
+## 常用汇编指令
+ - equ: equ是nasm提供的伪指令，意为equal，即等于，指令格式为：符号名称 equ 表达式
+ - dw：word，双字节，写入双字节即16个bit
+ - db：bite，单字节，写入单字节即8个bit
+ - dword: double word,四个字节，32bit
