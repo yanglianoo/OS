@@ -1,8 +1,8 @@
 # OS开发
 - 开发环境：
     - `ubuntu20.04.5`
-    - `sudo apt install nasm`:安装汇编编译器nasm
-    - `sudo apt install bochs-x`:安装虚拟机bochs
+    - `sudo apt install nasm`:安装汇编编译器 nasm
+    - `sudo apt install bochs-x`:安装虚拟机 bochs
 - 参考书籍:
     - 操作系统真相还原
     - 30天自制操作系统
