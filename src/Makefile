@@ -2,22 +2,23 @@ BUILD:=../build
 SRC:=.
 ENTRYPOINT:=0x10000 #内核入口地址
 
+#编译生成bin文件
 $(BUILD)/boot/%.bin: $(SRC)/boot/%.asm
 	$(shell mkdir -p $(dir $@))
 	nasm -f bin $< -o $@
 
-
+#编译生成start.o
 $(BUILD)/kernel/%.o: $(SRC)/kernel/%.asm
 	$(shell mkdir -p $(dir $@))
 	nasm -f elf32 $< -o $@
-
+#编译生成kernel.bin
 $(BUILD)/kernel.bin: $(BUILD)/kernel/start.o
 	$(shell mkdir -p $(dir $@))
 	ld -m elf_i386 -static $^ -o $@ -Ttext $(ENTRYPOINT)
-
+#编译生成system.bin文件
 $(BUILD)/system.bin:$(BUILD)/kernel.bin
 	objcopy -O binary $< $@
-
+#编译生成system.map文件
 $(BUILD)/system.map:$(BUILD)/kernel.bin
 	nm $< | sort > $@
 
@@ -29,7 +30,7 @@ $(BUILD)/master.img: $(BUILD)/boot/boot.bin \
 	yes | bximage -q -hd=16 -mode=create $@
 	dd if=$(BUILD)/boot/boot.bin of=$@ bs=512 count=1 conv=notrunc
 	dd if=$(BUILD)/boot/loader.bin of=$@ bs=512 count=4 seek=2 conv=notrunc
-	dd if=$(BUILD)/system.bin of=$@ bs=512 count=200 seek=10 conv=notrunc
+	dd if=$(BUILD)/system.bin of=$@ bs=512 count=200 seek=10 conv=notrunc   
 
 test: $(BUILD)/master.img
 

@@ -16,20 +16,21 @@ call print
 
 
 
-mov edi, 0x1000;读取的目标内存
+mov edi, 0x1000;将硬盘读到的数据放置的目标内存地址
 mov ecx, 2;起始扇区
 mov bl, 4;扇区数量
-call reda_disk
+call read_disk
 
 cmp word [0x1000], 0x55aa
 jnz error
-jmp 0x1002
+jmp 0x1002 ;跳转到0x1002执行内核
 
 jmp error
 ; 阻塞
 jmp $
 
-reda_disk:
+; 硬盘读写函数
+read_disk:
     ;设置读写的扇区的数量
     mov dx, 0x1f2
     mov al, bl ; al=bl=1 
@@ -95,8 +96,9 @@ reda_disk:
             add edi, 2
             loop .readw
         ret
+;实模式下的打印函数       
 print:
-    mov ah, 0x0e
+    mov ah, 0x0e ;调用bios的 int 0x10中断功能，功能号为 0x0e:显示字符，光标前移。al为写入的字符。将功能号写入ah寄存器
 .next:
     mov al, [si]
     cmp al, 0

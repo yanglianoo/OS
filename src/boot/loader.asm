@@ -113,7 +113,7 @@ protect_mode:
     mov edi, 0x10000;读取的目标内存
     mov ecx, 10;起始扇区
     mov bl, 200;扇区数量
-    call reda_disk
+    call read_disk
 
     jmp dword code_selector:0x10000
 
@@ -122,7 +122,7 @@ protect_mode:
 ;阻塞
 jmp $
 
-reda_disk:
+read_disk:
     ;设置读写的扇区的数量
     mov dx, 0x1f2
     mov al, bl ; al=bl=1 
