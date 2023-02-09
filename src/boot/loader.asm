@@ -37,7 +37,6 @@ detect_memory:
 
     mov si, detecting
     call print
-    xchg bx, bx
 
     jmp prepare_protect_mode
 ;     ;结构体数量
@@ -52,7 +51,6 @@ detect_memory:
 ;     xchg bx, bx
 ;     loop .show
 prepare_protect_mode:
-    xchg bx, bx
     cli ;关闭中断
 
     ;打开A20线 
