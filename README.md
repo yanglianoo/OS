@@ -3,6 +3,9 @@
     - `ubuntu20.04.5`
     - `sudo apt install nasm`:安装汇编编译器 nasm
     - `sudo apt install bochs-x`:安装虚拟机 bochs
+    - `sudo apt-get install qemu-system`   #下载安装可以模拟全部硬件的qemu
+    - `sudo apt install gdb` 安装gdb调试器
+
 - 参考书籍:
     - 操作系统真相还原
     - 30天自制操作系统
@@ -10,7 +13,7 @@
 
 **常用寄存器：**
 
-![image-20230128173803324](README.assets/image-20230128173803324.png)
+![image-20230128173803324](image/image-20230128173803324.png)
 
 | 16位寄存器 |      功能      |
 | :--------: | :------------: |
