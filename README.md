@@ -1,10 +1,11 @@
 # OS开发
 - 开发环境：
-    - `ubuntu20.04.5`
+    - `ubuntu20.04.5 WSL`
     - `sudo apt install nasm`:安装汇编编译器 nasm
     - `sudo apt install bochs-x`:安装虚拟机 bochs
     - `sudo apt-get install qemu-system`   #下载安装可以模拟全部硬件的qemu
     - `sudo apt install gdb` 安装gdb调试器
+    - `sudo apt-get install gcc-multilib`&&`sudo apt-get install g++-multilib` 安装在64位的机器上产生32位的程序
 
 - 参考书籍:
     - 操作系统真相还原

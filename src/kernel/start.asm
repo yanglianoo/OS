@@ -8,3 +8,4 @@ _start:
     call kernel_init
     xchg bx,bx
     jmp $
+    

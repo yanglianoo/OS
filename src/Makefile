@@ -31,7 +31,9 @@ $(BUILD)/kernel/%.o: $(SRC)/kernel/%.c
 	gcc $(CFLAGS) $(DEBUG) $(INCLUDE) -c $< -o $@
 
 #编译生成kernel.bin
-$(BUILD)/kernel.bin: $(BUILD)/kernel/start.o $(BUILD)/kernel/main.o
+$(BUILD)/kernel.bin: $(BUILD)/kernel/start.o \
+		$(BUILD)/kernel/main.o	\
+		$(BUILD)/kernel/io.o	\
 	$(shell mkdir -p $(dir $@))
 	ld -m elf_i386 -static $^ -o $@ -Ttext $(ENTRYPOINT)
 #编译生成system.bin文件
@@ -51,6 +53,9 @@ $(BUILD)/master.img: $(BUILD)/boot/boot.bin \
 	dd if=$(BUILD)/boot/loader.bin of=$@ bs=512 count=4 seek=2 conv=notrunc
 	dd if=$(BUILD)/system.bin of=$@ bs=512 count=200 seek=10 conv=notrunc   
 
+
+
+.PHONY: test
 test: $(BUILD)/master.img
 
 
