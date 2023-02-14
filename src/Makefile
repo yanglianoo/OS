@@ -1,6 +1,6 @@
 BUILD:=../build
 SRC:=.
-ENTRYPOINT:=0x10000 #内核入口地址
+ENTRYPOINT:=0x10000 #内核程序入口地址
 
 CFLAGS:= -m32 #32位的程序
 CFLAGS+= -fno-builtin #不需要gcc内置函数
@@ -31,24 +31,25 @@ $(BUILD)/%.o: $(SRC)/%.c
 	$(shell mkdir -p $(dir $@))
 	gcc $(CFLAGS) $(DEBUG) $(INCLUDE) -c $< -o $@
 
-#编译生成kernel.bin
+#编译生成kernel.bin,此时生成的kernel.bin为elf格式
 $(BUILD)/kernel.bin: $(BUILD)/kernel/start.o \
 		$(BUILD)/kernel/main.o	\
 		$(BUILD)/kernel/io.o	\
 		$(BUILD)/lib/string.o   \
 	$(shell mkdir -p $(dir $@))
-	ld -m elf_i386 -static $^ -o $@ -Ttext $(ENTRYPOINT)
-#编译生成system.bin文件
+	ld -m elf_i386 -static $^ -o $@ -Ttext $(ENTRYPOINT)   
+#编译生成system.bin文件，将elf heaer头去掉
 $(BUILD)/system.bin:$(BUILD)/kernel.bin
 	objcopy -O binary $< $@
-#编译生成system.map文件
-$(BUILD)/system.map:$(BUILD)/kernel.bin
-	nm $< | sort > $@
+
+# #编译生成system.map文件，排序
+# $(BUILD)/system.map:$(BUILD)/kernel.bin
+# 	nm $< | sort > $@
 
 $(BUILD)/master.img: $(BUILD)/boot/boot.bin \
 	$(BUILD)/boot/loader.bin \
 	$(BUILD)/system.bin      \
-	$(BUILD)/system.map		 \
+
 
 	yes | bximage -q -hd=16 -mode=create $@
 	dd if=$(BUILD)/boot/boot.bin of=$@ bs=512 count=1 conv=notrunc
