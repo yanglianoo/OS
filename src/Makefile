@@ -35,6 +35,7 @@ $(BUILD)/%.o: $(SRC)/%.c
 $(BUILD)/kernel.bin: $(BUILD)/kernel/start.o \
 		$(BUILD)/kernel/main.o	\
 		$(BUILD)/kernel/io.o	\
+		$(BUILD)/kernel/console.o \
 		$(BUILD)/lib/string.o   \
 	$(shell mkdir -p $(dir $@))
 	ld -m elf_i386 -static $^ -o $@ -Ttext $(ENTRYPOINT)   
@@ -42,7 +43,7 @@ $(BUILD)/kernel.bin: $(BUILD)/kernel/start.o \
 $(BUILD)/system.bin:$(BUILD)/kernel.bin
 	objcopy -O binary $< $@
 
-# #编译生成system.map文件，排序
+# #编译生成system.map文件，sort为排序
 # $(BUILD)/system.map:$(BUILD)/kernel.bin
 # 	nm $< | sort > $@
 
