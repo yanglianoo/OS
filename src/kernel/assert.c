@@ -29,7 +29,7 @@ void assertion_failure(char *exp, char *file, char *base, int line)
     asm volatile("ud2");
 }
 
-
+//程序出现致命错误
 void panic(const char *fmt, ...)
 {
     va_list args;
