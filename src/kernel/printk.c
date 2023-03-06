@@ -1,9 +1,11 @@
 #include <onix/printk.h>
 #include <onix/console.h>
 #include <onix/stdio.h>
+
+
 static char buf[1024];
 
-
+//内核打印函数
 int printk(const char *fmt, ...)
 {
     va_list args;

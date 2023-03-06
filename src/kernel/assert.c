@@ -13,7 +13,7 @@ static void spin(char *name)
     while (true)
         ;
 }
-
+//提示报错信息
 void assertion_failure(char *exp, char *file, char *base, int line)
 {
     printk(

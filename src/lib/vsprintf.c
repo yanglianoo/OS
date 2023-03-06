@@ -53,9 +53,9 @@ static char *number(char *str,unsigned long num, int base,int size,int precision
     if(flags & LEFT)
         flags &= ~ZEROPAD;
     
-    //如果进制基数小于或大于36，则退出处理
-    //也即本程序只能处理基数在 2-32之间的数
-    if(base < 2 || base > 36 )
+    //如果进制基数小于或大于32，则退出处理
+    //也即本程序只能处理基数在 2-32之间的数 2-32进制
+    if(base < 2 || base > 32 )
         return 0;
 
     //如果 flags 指出要填零，则置字符变量 c='0',否则 c 等于空格字符
@@ -69,6 +69,7 @@ static char *number(char *str,unsigned long num, int base,int size,int precision
     }
     else
     {
+        //判断是 如果符号是 + ，则sign = +，否则如果是空格，sign = ' ',如果都不是 就填 0
         sign = (flags & PLUS) ? '+' : ((flags & SPACE)? ' ': 0);
     }
 
@@ -76,7 +77,7 @@ static char *number(char *str,unsigned long num, int base,int size,int precision
     if(sign)
         size--;
 
-    //若flags指出是特殊转换，则对于十六进制宽度再减少2位 （用于 0x）
+    //若flags指出是特殊转换，则对于十六进制宽度再减少2位 （用于 0x） 八进制以 0 开头
     if(flags & SPECIAL)
     {
         if(base == 16)
@@ -92,6 +93,7 @@ static char *number(char *str,unsigned long num, int base,int size,int precision
     else
         while (num != 0)
         {
+            //进制转换
             index = num % base;
             num /= base;
             tmp[i++] = digits[index];
@@ -105,7 +107,6 @@ static char *number(char *str,unsigned long num, int base,int size,int precision
     size -= precision;
 
     //从这里真正开始形成所需要的转换结果，并暂时放在字符串 str 中
-
     //若 flags 中没有填零（ZEROPAD) 和左对齐(左调整)标志
     //则在 str 中首先填放剩余宽度值指出的空格数
     if(!(flags & (ZEROPAD + LEFT)))
@@ -150,6 +151,10 @@ static char *number(char *str,unsigned long num, int base,int size,int precision
     return str;   
 }
 
+//使用参数列表发送格式化输出到字符串。
+// buf:这是指向一个字符数组的指针，该数组存储了 C 字符串
+// fmt:这是字符串，包含了要被写入到字符串 str 的文本。它可以包含嵌入的 format 标签，format 标签可被随后的附加参数中指定的值替换，并按需求进行格式化。
+// fmt 标签属性是 %[flags][width][.precision][length]specifier
 int vsprintf(char *buf, const char *fmt, va_list args)
 {
     int len;
@@ -179,7 +184,7 @@ int vsprintf(char *buf, const char *fmt, va_list args)
         if(*fmt != '%')
         {
             *str++ = *fmt;
-            continue;
+            continue;        
         }
 
         //下面取得格式字符串中的标志域，并将标志常量放入 flags 变量中
