@@ -38,6 +38,7 @@ $(BUILD)/kernel.bin: $(BUILD)/kernel/start.o \
 		$(BUILD)/kernel/console.o \
 		$(BUILD)/kernel/printk.o   \
 		$(BUILD)/kernel/assert.o   \
+		$(BUILD)/kernel/debug.o    \
 		$(BUILD)/lib/string.o   \
 		$(BUILD)/lib/vsprintf.o   \
 	$(shell mkdir -p $(dir $@))
