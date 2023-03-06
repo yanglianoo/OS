@@ -195,7 +195,7 @@ memory_limit equ ((1024 * 1024 * 1024 * 4) /(1024 * 4)) -1  ;1024 * 1024 = 1M  1
 code_selector equ (1 << 3)  ;代码段选择子，1左移三位： 1000 ，最后三位为0，代表选择第一个GDT
 data_selector equ (2 << 3)  ;数据段选择子，2左移三位： 10000，最后三位为0，代表选择第二个GDT
 
-;GDTR寄存器，通过 lgdr[gdt_ptr] 加载到GDTR寄存器里去
+;GDTR寄存器，通过 lgdt[gdt_ptr] 加载到GDTR寄存器里去
 gdt_ptr:
     dw (gdt_end - gdt_base ) - 1 ;界限
     dd gdt_base   ;GDT内存起始地址

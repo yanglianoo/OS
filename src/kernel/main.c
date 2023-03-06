@@ -6,12 +6,12 @@
 #include <onix/stdarg.h>
 #include <onix/printk.h>
 #include <onix/debug.h>
-
+#include <onix/global.h>
 
 void kernel_init()
 {
     console_init();
-    DEBUGK("debug onix!!!\n");
+    gdt_init();
     
     return ;
     
