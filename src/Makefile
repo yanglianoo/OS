@@ -40,6 +40,8 @@ $(BUILD)/kernel.bin: $(BUILD)/kernel/start.o \
 		$(BUILD)/kernel/assert.o   \
 		$(BUILD)/kernel/debug.o    \
 		$(BUILD)/kernel/global.o    \
+		$(BUILD)/kernel/task.o    \
+		$(BUILD)/kernel/schedule.o    \
 		$(BUILD)/lib/string.o   \
 		$(BUILD)/lib/vsprintf.o   \
 	$(shell mkdir -p $(dir $@))
@@ -48,9 +50,9 @@ $(BUILD)/kernel.bin: $(BUILD)/kernel/start.o \
 $(BUILD)/system.bin:$(BUILD)/kernel.bin
 	objcopy -O binary $< $@
 
-# #编译生成system.map文件，sort为排序
-# $(BUILD)/system.map:$(BUILD)/kernel.bin
-# 	nm $< | sort > $@
+#编译生成system.map文件，sort为排序
+$(BUILD)/system.map:$(BUILD)/kernel.bin
+	nm $< | sort > $@
 
 $(BUILD)/master.img: $(BUILD)/boot/boot.bin \
 	$(BUILD)/boot/loader.bin \
