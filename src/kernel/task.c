@@ -2,7 +2,7 @@
 #include <onix/printk.h>
 #include <onix/debug.h>
 
-#define PAGE_SIZE 0x1000  //一页=4Kb
+#define PAGE_SIZE 0x1000  //一页 = 4Kb
 /*
 ABI的寄存器，进程切换之前保存，进程切换之后恢复
 eax：存的是返回值，肯定会改变
@@ -62,7 +62,7 @@ static void task_create(task_t *task, target_t target)
     frame->esi = 0x22222222;
     frame->edi = 0x33333333;
     frame->ebp = 0x44444444;
-    
+
     //函数return 后会跳转到这里去执行，存储了下一条将要执行的指令在内存中的地址
     frame->eip = (void *)target; //指向要创建的任务
 

@@ -85,7 +85,7 @@ qemu: $(BUILD)/master.img
 qemug: $(BUILD)/master.img
 	qemu-system-i386 \
 	-s -S \
-	-m 32M \
+	-m 32M \   
 	-boot c \
 	-hda $<
 $(BUILD)/master.vmdk: $(BUILD)/master.img
