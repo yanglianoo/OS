@@ -42,8 +42,11 @@ $(BUILD)/kernel.bin: $(BUILD)/kernel/start.o \
 		$(BUILD)/kernel/global.o    \
 		$(BUILD)/kernel/task.o    \
 		$(BUILD)/kernel/schedule.o    \
+		$(BUILD)/kernel/interrupt.o    \
+		$(BUILD)/kernel/handler.o    \
 		$(BUILD)/lib/string.o   \
 		$(BUILD)/lib/vsprintf.o   \
+		$(BUILD)/lib/stdlib.o   
 	$(shell mkdir -p $(dir $@))
 	ld -m elf_i386 -static $^ -o $@ -Ttext $(ENTRYPOINT)   
 #编译生成system.bin文件，将elf heaer头去掉
@@ -77,11 +80,14 @@ clean:
 bochs: $(BUILD)/master.img
 	bochs -q
 
+.PHONY: qemu
 qemu: $(BUILD)/master.img
 	qemu-system-i386 \
 	-m 32M \
 	-boot c \
 	-hda $<
+
+.PHONY: qemug
 qemug: $(BUILD)/master.img
 	qemu-system-i386 \
 	-s -S \
