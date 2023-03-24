@@ -23,11 +23,35 @@ interrupt_handler_%1:
 %endmacro
 
 interrupt_entry:
+
+    ; 保存上文的寄存器信息
+    push ds
+    push es
+    push fs
+    push gs
+    ; 压入通用寄存器
+    pusha 
     ; 取出中断号
-    mov eax, [esp]
+    mov eax, [esp + 12 * 4]
+
+    ; 向中断处理函数传递函数参数
+    push eax
     ; 调用中断处理函数
     call [handler_table + eax * 4]
 
+    ; 对应 push eax,调用结束恢复栈
+    add esp, 4
+
+    ; 恢复上下文寄存器信息
+    ; 弹出通用寄存器
+    popa
+    pop gs
+    pop fs
+    pop es
+    pop ds
+
+    ; 对应push %1
+    ; 对应error code 或 push magic
     add esp, 8
     iret
 

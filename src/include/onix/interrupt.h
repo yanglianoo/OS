@@ -17,9 +17,5 @@ typedef struct gate_t
 } _packed gate_t;
 
 typedef void *handler_t; // 中断处理函数
-void default_handler(int vector);
-void exception_handler(int vector);
 void interrupt_init();
-void idt_init();
-void pic_init();
 #endif

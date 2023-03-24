@@ -7,8 +7,10 @@
 #define bool _Bool
 #define true 1
 #define false 0
-
+//用于定义特殊的结构体，声明结构体不需要字节对齐
 #define _packed __attribute__((packed))
+
+#define _ofp __attribute__((optimize("omit-frame-pointer")))
 
 typedef unsigned int size_t;
 typedef char int8;

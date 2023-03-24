@@ -152,22 +152,21 @@ static void command_cr()
 //滚屏操作
 static void scroll_up()
 {
-    if(screen + SCR_SIZE + ROW_SIZE < MEM_END)
+    if(screen + SCR_SIZE + ROW_SIZE >= MEM_END)
     {
+        memcpy((void*)MEM_BASE,(void*)screen,SCR_SIZE);
+        pos -= (screen -MEM_BASE);
+        screen = MEM_BASE;
+    }
+
         u32 *ptr = (u32 *)(screen + SCR_SIZE);
-        for(size_t i = 0; i < WIDTH;i++)
+        for (size_t i = 0; i < WIDTH; i++)
         {
             *ptr++ = erase;
         }
         screen += ROW_SIZE;
         pos += ROW_SIZE;
-    }
-    else{
-        memcpy(MEM_BASE,screen,SCR_SIZE);
-        pos -= (screen -MEM_BASE);
-        screen = MEM_BASE;
-    }
-    set_screen();
+        set_screen();
 }
 //换行符 \n
 static void command_lf()
