@@ -1,3 +1,12 @@
+/**
+ * @File Name: interrupt.c
+ * @brief  
+ * @Author : Timer email:330070781@qq.com
+ * @Version : 1.0
+ * @Creat Date : 2023-03-26
+ * 
+ */
+
 #include <onix/interrupt.h>
 #include <onix/global.h>
 #include <onix/debug.h>
@@ -5,6 +14,7 @@
 #include <onix/stdlib.h>
 #include <onix/io.h>
 #include <onix/task.h>
+#include <onix/assert.h>
 #define LOGK(fmt,args...) DEBUGK(fmt,##args)
 
 #define ENTRY_SIZE 0x30
@@ -17,11 +27,11 @@
 
 gate_t idt[IDT_SIZE];
 pointer_t idt_ptr;
-//中断向量表
+//中断向量表，里面存储的是每一个中断函数的入口地址
 handler_t handler_table[IDT_SIZE];
-//中断函数入口地址
+//中断描述符表
 extern handler_t handler_entry_table[ENTRY_SIZE];
-
+                     
 
 
 static char *messages[] = {
@@ -74,6 +84,8 @@ void exception_handler(    int vector,
     // 阻塞
     hang();
 }
+
+
 // 通知中断控制器，中断处理结束
 void send_eoi(int vector)
 {
@@ -85,6 +97,49 @@ void send_eoi(int vector)
     {
         outb(PIC_M_CTRL, PIC_EOI);
         outb(PIC_S_CTRL, PIC_EOI);
+    }
+}
+
+
+
+
+void set_interrupt_handler(u32 irq, handler_t handler)
+{
+     //使用 assert 函数确保中断号在正确的范围内
+    assert(irq >= 0 && irq < 16);
+    handler_table[IRQ_MASTER_NR + irq] = handler;
+}
+
+
+/**
+ * @brief  实现了中断屏蔽的功能,如果 enable 为 true，则将对应中断的屏蔽位置 0，否则将对应中断的屏蔽位置 1
+ * @param  irq: 中断号
+ * @param  enable: 布尔值 enable
+ */
+void set_interrupt_mask(u32 irq, bool enable)
+{
+    //使用 assert 函数确保中断号在正确的范围内
+    assert(irq >= 0 && irq < 16);
+
+
+    u16 port;
+    //判断中断号为主片还是重片
+    if (irq < 8)
+    {
+        port = PIC_M_DATA;
+    }
+    else
+    {
+        port = PIC_S_DATA;
+        irq -= 8;
+    }
+    if (enable)
+    {
+        outb(port, inb(port) & ~(1 << irq)); //1左移 irq位，然后按位与
+    }
+    else
+    {
+        outb(port, inb(port) | (1 << irq)); //1左移 irq位，然后按位或
     }
 }
 
