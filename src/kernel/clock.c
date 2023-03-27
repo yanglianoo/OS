@@ -51,6 +51,7 @@ void clock_handler(int vector)
     }
     jiffies++;
     DEBUGK("jiffiles = %d\n",jiffies);
+    stop_beep();
 }
 
 void pit_init()
