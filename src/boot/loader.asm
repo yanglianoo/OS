@@ -30,7 +30,7 @@ detect_memory:
     ;将缓存指针指向下一个结构体
     add di, cx
     ;将结构体数量加一
-    inc word [ards_count]
+    inc dword [ards_count]
 
     cmp ebx, 0
     jnz .next
@@ -112,6 +112,9 @@ protect_mode:
     mov ecx, 10;起始扇区
     mov bl, 200;扇区数量
     call read_disk
+
+    mov eax,0x20220205;
+    mov ebx,ards_count;
 
     jmp dword code_selector:0x10000
 
@@ -240,7 +243,7 @@ gdt_end:
 
 ;检测到的可使用的内存块的个数
 ards_count: 
-    dw 0
+    dd 0
 ;内存检测缓存结构体
 ards_buffer:
 

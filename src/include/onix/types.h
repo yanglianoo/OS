@@ -4,9 +4,13 @@
 #define EOF -1  
 #define NULL ((void *)0)
 #define EOS '\0'
+
+#ifndef __cplusplus
 #define bool _Bool
 #define true 1
 #define false 0
+#endif
+
 //用于定义特殊的结构体，声明结构体不需要字节对齐
 #define _packed __attribute__((packed))
 

@@ -37,6 +37,7 @@ void cmos_write(u8 addr, u8 value)
     outb(CMOS_DATA, value);
 }
 static u32 volatile counter = 0;
+
 // 实时时钟中断处理函数
 void rtc_handler(int vector)
 {
@@ -92,20 +93,20 @@ void set_alarm(u32 secs)
     cmos_write(CMOS_MINUTE, bin_to_bcd(time.tm_min));
     cmos_write(CMOS_SECOND, bin_to_bcd(time.tm_sec));
 
-    // cmos_write(CMOS_B, 0b00100010); // 打开闹钟中断
-    // cmos_read(CMOS_C);              // 读 C 寄存器，以允许 CMOS 中断
+    cmos_write(CMOS_B, 0b00100010); // 打开闹钟中断
+    cmos_read(CMOS_C);              // 读 C 寄存器，以允许 CMOS 中断
 }
 
 
 void rtc_init()
 {
     //cmos_write(CMOS_B, 0b00100010); // 打开闹钟中断
-    cmos_write(CMOS_B, 0b01000010); // 打开周期中断
-    cmos_read(CMOS_C);
+    // cmos_write(CMOS_B, 0b01000010); // 打开周期中断
+    // cmos_read(CMOS_C);
 
-    //set_alarm(2);
-    //设置中断频率
-    outb(CMOS_A, (inb(CMOS_A) & 0xf) | 0b1110);
+    // //set_alarm(2);
+    // //设置中断频率
+    // outb(CMOS_A, (inb(CMOS_A) & 0xf) | 0b1110);
 
     set_interrupt_handler(IRQ_RTC, rtc_handler);
     set_interrupt_mask(IRQ_RTC, true);
