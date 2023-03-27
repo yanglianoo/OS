@@ -45,6 +45,7 @@ $(BUILD)/kernel.bin: $(BUILD)/kernel/start.o \
 		$(BUILD)/kernel/interrupt.o    \
 		$(BUILD)/kernel/handler.o    \
 		$(BUILD)/kernel/clock.o    \
+		$(BUILD)/kernel/time.o    \
 		$(BUILD)/lib/string.o   \
 		$(BUILD)/lib/vsprintf.o   \
 		$(BUILD)/lib/stdlib.o   
@@ -81,20 +82,23 @@ clean:
 bochs: $(BUILD)/master.img
 	bochs -q
 
-.PHONY: qemu
-qemu: $(BUILD)/master.img
-	qemu-system-i386 \
+
+
+QEMU:=	qemu-system-i386 \
 	-m 32M \
 	-boot c \
-	-hda $<
+	-drive file=$(BUILD)/master.img,if=ide,index=0,media=disk,format=raw \
+	-rtc base=localtime
+
+.PHONY: qemu
+qemu: $(BUILD)/master.img
+	$(QEMU)
 
 .PHONY: qemug
 qemug: $(BUILD)/master.img
-	qemu-system-i386 \
-	-s -S \
-	-m 32M \   
-	-boot c \
-	-hda $<
+	$(QEMU) -s -S
+
+# 将qemu格式的镜像转换为vmware格式的镜像
 $(BUILD)/master.vmdk: $(BUILD)/master.img
 	qemu-img convert  vmdk $< $@
 

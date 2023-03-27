@@ -10,6 +10,7 @@
 #include <onix/task.h>
 #include <onix/interrupt.h>
 #include <onix/stdlib.h>
+#include <onix/time.h>
 void kernel_init()
 {
     
@@ -18,11 +19,8 @@ void kernel_init()
     interrupt_init();
     // task_init();
     clock_init();
+    time_init();
 
-    asm volatile("sti");
-    hang();
-
-    
     return ;
 
 }

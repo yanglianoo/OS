@@ -181,6 +181,8 @@ static void command_lf()
    scroll_up();
 
 }
+
+extern void start_beep();
 //在显示器上写入字符串
 void console_write(char *buf,u32 count)
 {
@@ -196,6 +198,7 @@ void console_write(char *buf,u32 count)
         case ASCII_ENQ:
             break;
         case ASCII_BEL:
+            start_beep();
             break;
         case ASCII_BS:
             command_bs();
