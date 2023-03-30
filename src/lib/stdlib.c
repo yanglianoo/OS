@@ -7,6 +7,7 @@ void delay(u32 count)
         ;
 }
 
+//阻塞函数
 void hang()
 {
     while (true)
@@ -26,6 +27,19 @@ u8 bin_to_bcd(u8 value)
     return (value / 10) * 0x10 + (value % 10);
 }
 
+
+
+
+/**
+ * @brief  计算 num 分成 size 的数量，并向上取整
+ * @param  num: 传入参数
+ * @param  size: 除数
+ * @return u32: 保证为整数
+ */
+u32 div_round_up(u32 num, u32 size)
+{
+    return (num + size -1) / size;
+}
 
 
 

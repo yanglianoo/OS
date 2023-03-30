@@ -5,7 +5,7 @@
 #define MAX(a,b) (a < b ? b : a )
 #define MIN(a,b) (a > b ? b : a )
 
-
+//计算 num 分成 size 的数量
 u32 div_round_up(u32 num, u32 size);
 // 延迟
 void delay(u32 count);

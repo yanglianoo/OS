@@ -14,18 +14,18 @@
 #include <onix/rtc.h>
 void kernel_init()
 {
-    //屏幕初始化
-    console_init();  
-    //gdt初始化
-    gdt_init();
+
+    memory_map_init();
     //中断初始化
     interrupt_init();
-    //时钟初始化
-    clock_init();
-    //时间戳初始化
-    time_init();
-    //实时时钟初始化
-    rtc_init();
+    // //时钟初始化
+    // clock_init();
+    // //时间戳初始化
+    // time_init();
+    // //实时时钟初始化
+    // rtc_init();
+    memory_test();
+    
 
 
     asm volatile("sti");

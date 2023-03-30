@@ -13,8 +13,8 @@ _start:
     push eax  ;magic
 
     call console_init
-    ; call gdt_init
+    call gdt_init
     call memory_init
-    ; call kernel_init
+    call kernel_init
     jmp $
     

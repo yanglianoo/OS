@@ -43,6 +43,12 @@ static u32 free_pages = 0;   //空闲内存页数
 
 #define used_pages (total_pages - free_pages) //已用页数
 
+
+/**
+ * @brief  初始化内存地址，将loader检测到的可用内存结构体读出来
+ * @param  magic: 内核魔数
+ * @param  addr:  实际位addr_count的值。将此地址 +4 即是 addr_buffer 的指针
+ */
 void memory_init(u32 magic, u32 addr)
 {
     u32 count = 0;
@@ -71,8 +77,8 @@ void memory_init(u32 magic, u32 addr)
     }
 
     LOGK("ARDS count %d\n",count);
-    LOGK("Memory base %d\n",(u32)memory_base);
-    LOGK("Memoru size %d\n",(u32)memory_size);
+    LOGK("Memory base 0x%p\n",(u32)memory_base);
+    LOGK("Memory size 0x%p\n",(u32)memory_size);
 
     assert(memory_base == MEMORY_BASE);
     assert((memory_size & 0xfff) == 0);
@@ -81,8 +87,106 @@ void memory_init(u32 magic, u32 addr)
     free_pages = IDX(memory_size);
 
     LOGK("Total pages %d\n",total_pages);
-    LOGK("Free pages %d\n",total_pages);
+    LOGK("Free pages %d\n",free_pages);
 }
+
+
+static u32 start_page = 0;    //可分配物理内存起始位置
+static u8 *memory_map;       //物理内存数组
+static u32 memory_map_pages;  //物理内存数组占用的页数
+
+/**
+ * @brief  初始化内存映射表，标记已经被占用的内存页
+ * 
+ */
+void memory_map_init()
+{
+    //初始化物理内存数组
+    memory_map = (u8*)memory_base;
+
+    // 计算物理内存数组占用的页数
+    //总共8160页 每一页大小为4K 因此物理内存数组大小为 8160/4K 
+    memory_map_pages = div_round_up(total_pages, PAGE_SIZE);
+    LOGK("Memory map page count %d\n", memory_map_pages);
+
+    //空闲页减少
+    free_pages -= memory_map_pages;
+
+    // 清空物理内存数组
+    memset((void *)memory_map, 0 , memory_map_pages * PAGE_SIZE);
+
+    // 前 1M 的内存位置 以及 物理内存数组已占用的页，已被占用
+    start_page = IDX(MEMORY_BASE) + memory_map_pages;
+    for (size_t i = 0; i < start_page; i++)
+    {
+        memory_map[i] = 1;
+    }
+
+    LOGK("Total pages %d free pages %d Start pages %d \n",total_pages,free_pages,start_page);
+}
+
+
+//分配一页物理内存
+static u32 get_page()
+{
+    for (size_t i = start_page; i < total_pages; i++)
+    {
+        if(!memory_map[i])
+        {
+            //将此页标记为已被占用
+            memory_map[i] = 1;
+            free_pages--;
+            assert(free_pages >= 0);
+            //左移12位就是 乘以 4K
+            u32 page = ((u32)i) << 12;
+            LOGK("GET page 0x%p\n", page);
+            return page;
+        }
+    }
+    panic("Out of memory!!!");
+}
+
+//释放一页物理内存
+static void put_page(u32 addr)
+{
+    //判断传入地址是否为页起始地址
+    ASSERT_PAGE(addr);
+
+    //获取页索引
+    u32 idx = IDX(addr);
+
+    assert(idx >= start_page && idx < total_pages);
+
+    assert(memory_map[idx] >= 1);
+
+    memory_map[idx]--;
+
+    if(!memory_map[idx])
+    {
+        free_pages++;
+    }
+
+    assert(free_pages >0 && free_pages < total_pages);
+    LOGK("PUT page 0x%p\n",addr);
+}
+
+
+void memory_test()
+{
+    u32 pages[10];
+    for (size_t i = 0; i < 10; i++)
+    {
+        pages[i] = get_page();
+    }
+
+    for (size_t i = 0; i < 10; i++)
+    {
+        put_page(pages[i]);
+    }
+    
+}
+
+
 
 
 

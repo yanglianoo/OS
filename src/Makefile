@@ -96,7 +96,7 @@ QEMU:=	qemu-system-i386 \
 	-m 32M \
 	-boot c \
 	-drive file=$(BUILD)/master.img,if=ide,index=0,media=disk,format=raw \
-	-rtc base=localtime
+	-rtc base=localtime 
 
 .PHONY: qemu
 qemu: $(BUILD)/master.img
