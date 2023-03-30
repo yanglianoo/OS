@@ -47,6 +47,7 @@ $(BUILD)/kernel.bin: $(BUILD)/kernel/start.o \
 		$(BUILD)/kernel/clock.o    \
 		$(BUILD)/kernel/time.o    \
 		$(BUILD)/kernel/rtc.o    \
+		$(BUILD)/kernel/memory.o    \
 		$(BUILD)/lib/string.o   \
 		$(BUILD)/lib/vsprintf.o   \
 		$(BUILD)/lib/stdlib.o   
@@ -63,11 +64,17 @@ $(BUILD)/system.map:$(BUILD)/kernel.bin
 $(BUILD)/master.img: $(BUILD)/boot/boot.bin \
 	$(BUILD)/boot/loader.bin \
 	$(BUILD)/system.bin      \
+	$(BUILD)/system.map		  \
 
-
-	yes | bximage -q -hd=16 -mode=create $@
+# 创建一个 16M 的硬盘镜像
+	yes | bximage -q -hd=16 -mode=create  -imgmode=flat $@
+# 将 boot.bin 写入主引导扇区
 	dd if=$(BUILD)/boot/boot.bin of=$@ bs=512 count=1 conv=notrunc
+# 将loader.bin写入硬盘
 	dd if=$(BUILD)/boot/loader.bin of=$@ bs=512 count=4 seek=2 conv=notrunc
+# 测试system.bin小于 100K ,否则需要修改下面的count
+	test -n "$$(find $(BUILD)/system.bin -size -100k)"
+# 将system.bin写入硬盘
 	dd if=$(BUILD)/system.bin of=$@ bs=512 count=200 seek=10 conv=notrunc   
 
 

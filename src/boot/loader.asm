@@ -39,7 +39,7 @@ detect_memory:
     call print
 
     jmp prepare_protect_mode
-;     ;结构体数量
+    ; 结构体数量
 ;     mov cx, [ards_count]
 ;     ;结构体指针
 ;     mov si, 0
@@ -113,8 +113,8 @@ protect_mode:
     mov bl, 200;扇区数量
     call read_disk
 
-    mov eax,0x20220205;
-    mov ebx,ards_count;
+    mov eax,0x20220205; 内核魔数
+    mov ebx,ards_count; ards 数量指针
 
     jmp dword code_selector:0x10000
 
