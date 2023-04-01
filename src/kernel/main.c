@@ -16,6 +16,7 @@ void kernel_init()
 {
 
     memory_map_init();
+    mapping_init();
     //中断初始化
     interrupt_init();
     // //时钟初始化
@@ -24,11 +25,16 @@ void kernel_init()
     // time_init();
     // //实时时钟初始化
     // rtc_init();
-    memory_test();
+    // memory_test();
     
 
+    BMB;
 
-    asm volatile("sti");
+    char *ptr = (char *)(0x100000 * 20);
+
+    ptr[0] = 'a';
+
+    // asm volatile("sti");
     hang();
 
     return ;

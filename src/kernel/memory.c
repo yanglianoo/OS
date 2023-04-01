@@ -8,6 +8,7 @@
 
 #define LOGK(fmt, args...) DEBUGK(fmt, ##args)
 
+//type = 1 代表可用  type = 2 代表不可用
 #define ZONE_VALID 1   //ards  可用内存区域
 #define ZONE_RESERVED 2 //ards 不可用区域
 
@@ -184,6 +185,76 @@ void memory_test()
         put_page(pages[i]);
     }
     
+}
+
+
+u32 get_cr3()
+{
+    asm volatile("movl %cr3, %eax\n");
+}
+
+
+void inline set_cr3(u32 pde)
+{
+    ASSERT_PAGE(pde);
+    asm volatile("movl %%eax, %%cr3\n" ::"a"(pde));
+}
+
+
+//将 cr0 寄存器最高位 PG 置为1，启用分页
+static inline void enable_page()
+{
+    asm volatile(
+        "movl %cr0, %eax\n"
+        "orl $0x80000000, %eax\n"
+        "movl %eax, %cr0\n"
+    );
+}
+
+static void entry_init(page_entry_t *entry, u32 index)
+{
+    *(u32 *)entry = 0;
+    entry->present = 1;
+    entry->write = 1;
+    entry->user = 1;
+    entry->index = index;
+}
+
+//内核页目录表的物理地址
+#define KERNEL_PAGE_DIR 0x200000
+
+//内核页表的物理地址
+#define KERNEL_PAGE_ENTRY 0x201000
+
+
+void mapping_init()
+{
+    //初始化页表目录，刚好占一个页
+    page_entry_t *pde = (page_entry_t *)KERNEL_PAGE_DIR;
+    memset(pde,0,PAGE_SIZE);
+    //将第0项内核页目录项设置为指向内核页表的物理地址
+    entry_init(&pde[0],IDX(KERNEL_PAGE_ENTRY));
+
+    // pte 存放的开始位置，将内核页表清零
+    page_entry_t *pte = (page_entry_t *)KERNEL_PAGE_ENTRY;
+    memset(pte,0,PAGE_SIZE);
+
+    //初始化 1024 个页表
+    page_entry_t *entry;
+    for (size_t tidx = 0; tidx < 1024; tidx++)
+    {
+        entry = &pte[tidx];
+        //初始化页表
+        entry_init(entry, tidx);
+        //标记此页已经被使用
+        memory_map[tidx] = 1;
+    }
+    BMB;
+    //设置cr3寄存器，将pde写入cr3寄存器
+    set_cr3((u32)pde);
+    BMB;
+    //启用分页机制
+    enable_page();  
 }
 
 
