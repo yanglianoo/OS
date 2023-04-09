@@ -12,6 +12,7 @@
 #include <onix/stdlib.h>
 #include <onix/time.h>
 #include <onix/rtc.h>
+#include <onix/bitmap.h>
 void kernel_init()
 {
 
@@ -28,11 +29,8 @@ void kernel_init()
     // memory_test();
     
 
-    BMB;
+    bitmap_tests();
 
-    char *ptr = (char *)(0x100000 * 20);
-
-    ptr[0] = 'a';
 
     // asm volatile("sti");
     hang();

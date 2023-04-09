@@ -22,12 +22,25 @@
 
 #define PAGE(idx) ((u32)idx << 12)  //获取页索引 idx 对应的页的开始的位置
 
+#define DIDX(addr) ((u32)addr >> 12) //获取 addr 的页目录索引
+#define TIDX(addr) (((u32)addr >> 22) & 0x3ff) //获取页索引 idx 对应的页开始的位置
 
 /**
  * @brief  在宏函数的定义中，& 运算符用于将地址 addr 的低 12 位与二进制数 0xfff 进行按位与操作，
  *         得到低 12 位的值，如果这个值不等于 0，就说明该地址不是一个物理页的起始地址
  */
 #define ASSERT_PAGE(addr) assert((addr & 0xfff) == 0)
+
+//内核页目录索引
+#define KERNEL_PAGE_DIR 0x1000
+
+//内核页表索引
+static u32 KERNEL_PAGE_TABLE[] = {
+    0x2000,
+    0x3000,
+};
+
+#define KERNEL_MEMORY_SIZE (0x100000 * sizeof(KERNEL_PAGE_TABLE))
 
 typedef struct ards_t
 {
@@ -89,6 +102,12 @@ void memory_init(u32 magic, u32 addr)
 
     LOGK("Total pages %d\n",total_pages);
     LOGK("Free pages %d\n",free_pages);
+
+    if(memory_size < KERNEL_MEMORY_SIZE)
+    {
+        panic("System memory is %dM too small, at least %dM needed\n",
+              memory_size / MEMORY_BASE, KERNEL_MEMORY_SIZE / MEMORY_BASE);
+    }
 }
 
 
@@ -194,15 +213,16 @@ u32 get_cr3()
 }
 
 
-void inline set_cr3(u32 pde)
+void  set_cr3(u32 pde)
 {
     ASSERT_PAGE(pde);
     asm volatile("movl %%eax, %%cr3\n" ::"a"(pde));
 }
 
 
+
 //将 cr0 寄存器最高位 PG 置为1，启用分页
-static inline void enable_page()
+static _inline void enable_page()
 {
     asm volatile(
         "movl %cr0, %eax\n"
@@ -220,11 +240,6 @@ static void entry_init(page_entry_t *entry, u32 index)
     entry->index = index;
 }
 
-//内核页目录表的物理地址
-#define KERNEL_PAGE_DIR 0x200000
-
-//内核页表的物理地址
-#define KERNEL_PAGE_ENTRY 0x201000
 
 
 void mapping_init()
@@ -232,24 +247,34 @@ void mapping_init()
     //初始化页表目录，刚好占一个页
     page_entry_t *pde = (page_entry_t *)KERNEL_PAGE_DIR;
     memset(pde,0,PAGE_SIZE);
-    //将第0项内核页目录项设置为指向内核页表的物理地址
-    entry_init(&pde[0],IDX(KERNEL_PAGE_ENTRY));
+    
+    idx_t index = 0;
 
-    // pte 存放的开始位置，将内核页表清零
-    page_entry_t *pte = (page_entry_t *)KERNEL_PAGE_ENTRY;
-    memset(pte,0,PAGE_SIZE);
-
-    //初始化 1024 个页表
-    page_entry_t *entry;
-    for (size_t tidx = 0; tidx < 1024; tidx++)
+    for (idx_t didx = 0; didx < (sizeof(KERNEL_PAGE_TABLE) / 4); didx++)
     {
-        entry = &pte[tidx];
-        //初始化页表
-        entry_init(entry, tidx);
-        //标记此页已经被使用
-        memory_map[tidx] = 1;
+        page_entry_t *pte = (page_entry_t *)KERNEL_PAGE_TABLE[didx];
+        memset(pte, 0, PAGE_SIZE);
+
+        page_entry_t *dentry = &pde[didx];
+        entry_init(dentry, IDX((u32)pte));
+        dentry->user = 0; // 只能被内核访问
+
+        for (idx_t tidx = 0; tidx < 1024; tidx++, index++)
+        {
+            // 第 0 页不映射，为造成空指针访问，缺页异常，便于排错
+            if (index == 0)
+                continue;
+
+            page_entry_t *tentry = &pte[tidx];
+            entry_init(tentry, index);
+            tentry->user = 0;      // 只能被内核访问
+            memory_map[index] = 1; // 设置物理内存数组，该页被占用
+        }
     }
-    BMB;
+
+    // 将最后一个页表指向页目录自己，方便修改
+    page_entry_t *entry = &pde[1023];
+    entry_init(entry, IDX(KERNEL_PAGE_DIR));
     //设置cr3寄存器，将pde写入cr3寄存器
     set_cr3((u32)pde);
     BMB;
@@ -257,6 +282,26 @@ void mapping_init()
     enable_page();  
 }
 
+
+// 获取页目录 pde
+static page_entry_t *get_pde()
+{
+    return (page_entry_t *)(0xfffff000);
+}
+
+//获取页表 pte
+static page_entry_t *get_pte(u32 vaddr)
+{
+    return (page_entry_t *)(0xffc00000 | (DIDX(vaddr)));
+}
+
+
+// 刷新虚拟地址 vaddr 的 块表 TLB
+void flush_tlb(u32 vaddr)
+{
+    asm volatile("invlpg (%0)" ::"r"(vaddr)
+                 : "memory");
+}
 
 
 

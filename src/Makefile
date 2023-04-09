@@ -48,6 +48,7 @@ $(BUILD)/kernel.bin: $(BUILD)/kernel/start.o \
 		$(BUILD)/kernel/time.o    \
 		$(BUILD)/kernel/rtc.o    \
 		$(BUILD)/kernel/memory.o    \
+		$(BUILD)/kernel/bitmap.o    \
 		$(BUILD)/lib/string.o   \
 		$(BUILD)/lib/vsprintf.o   \
 		$(BUILD)/lib/stdlib.o   
@@ -88,7 +89,7 @@ clean:
 	rm -rf $(BUILD)
 .PHONY: bochs
 bochs: $(BUILD)/master.img
-	bochs -q
+	bochs -q -unlock
 
 
 
