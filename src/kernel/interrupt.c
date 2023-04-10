@@ -197,10 +197,43 @@ void idt_init()
     asm volatile("lidt idt_ptr\n");
 }
 
+//清除 IF 位，返回设置之前的值
+bool interrupt_disable()  
+{
+    asm volatile(
+        "pushfl\n"
+        "cli\n"
+        "popl %eax\n"
+        "shrl $9, %eax\n"
+        "andl $1, %eax\n"
+    );
+}
+
+//获得IF位
+bool get_interrupt_state()
+{
+    asm volatile(
+        "pushfl\n"
+        "popl %eax\n"
+        "shrl $9, %eax\n"
+        "andl $1, %eax\n"
+    );
+}
+
+//设置IF位
+void set_interrupt_state(bool state)
+{
+    if(state)
+        asm volatile("sti\n");
+    else
+        asm volatile("cli\n");
+}
 
 void interrupt_init()
 {
     pic_init();
     idt_init();
 }
+
+
 
