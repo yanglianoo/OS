@@ -5,6 +5,7 @@
 #include <onix/onix.h>
 #include <onix/stdlib.h>
 #include <onix/string.h>
+#include <onix/bitmap.h>
 
 #define LOGK(fmt, args...) DEBUGK(fmt, ##args)
 
@@ -23,6 +24,7 @@
 #define PAGE(idx) ((u32)idx << 12)  //获取页索引 idx 对应的页的开始的位置
 
 #define DIDX(addr) ((u32)addr >> 12) //获取 addr 的页目录索引
+
 #define TIDX(addr) (((u32)addr >> 22) & 0x3ff) //获取页索引 idx 对应的页开始的位置
 
 /**
@@ -40,8 +42,11 @@ static u32 KERNEL_PAGE_TABLE[] = {
     0x3000,
 };
 
+#define KERNEL_MAP_BITS 0x4000
+
 #define KERNEL_MEMORY_SIZE (0x100000 * sizeof(KERNEL_PAGE_TABLE))
 
+bitmap_t kernel_map;
 typedef struct ards_t
 {
     u64 base; //内存基地址 64位 8字节
@@ -68,7 +73,7 @@ void memory_init(u32 magic, u32 addr)
     u32 count = 0;
     ards_t *ptr;
 
-
+    // 如果是 onix loader 进入的内核
     if(magic == ONIX_MAGIC)
     {
         count = *(u32*)addr;
@@ -143,6 +148,12 @@ void memory_map_init()
     }
 
     LOGK("Total pages %d free pages %d Start pages %d \n",total_pages,free_pages,start_page);
+
+    //初始化内核虚拟内存位图，需要8位对齐
+    u32 length = (IDX(KERNEL_MEMORY_SIZE) - IDX(MEMORY_BASE)) / 8;
+    bitmap_init(&kernel_map, (u8 *)KERNEL_MAP_BITS,length,IDX(MEMORY_BASE));
+    bitmap_scan(&kernel_map, memory_map_pages);
+
 }
 
 
@@ -190,36 +201,19 @@ static void put_page(u32 addr)
     LOGK("PUT page 0x%p\n",addr);
 }
 
-
-void memory_test()
-{
-    u32 pages[10];
-    for (size_t i = 0; i < 10; i++)
-    {
-        pages[i] = get_page();
-    }
-
-    for (size_t i = 0; i < 10; i++)
-    {
-        put_page(pages[i]);
-    }
-    
-}
-
-
+// 得到 cr3 寄存器
 u32 get_cr3()
 {
+    // 直接将 mov eax, cr3，返回值在 eax 中
     asm volatile("movl %cr3, %eax\n");
 }
 
-
-void  set_cr3(u32 pde)
+// 设置 cr3 寄存器，参数是页目录的地址
+void set_cr3(u32 pde)
 {
     ASSERT_PAGE(pde);
     asm volatile("movl %%eax, %%cr3\n" ::"a"(pde));
 }
-
-
 
 //将 cr0 寄存器最高位 PG 置为1，启用分页
 static _inline void enable_page()
@@ -239,8 +233,6 @@ static void entry_init(page_entry_t *entry, u32 index)
     entry->user = 1;
     entry->index = index;
 }
-
-
 
 void mapping_init()
 {
@@ -292,10 +284,16 @@ static page_entry_t *get_pde()
 //获取页表 pte
 static page_entry_t *get_pte(u32 vaddr)
 {
-    return (page_entry_t *)(0xffc00000 | (DIDX(vaddr)));
+    return (page_entry_t *)(0xffc00000 | (DIDX(vaddr) << 12 ));
 }
 
-
+/**
+处理器中的 TLB 是一种高速缓存，它存储了虚拟地址空间到物理内存之间的映射关系，以提高地址转换的速度。
+在使用页表进行地址映射时，处理器会先在 TLB 中查找虚拟地址对应的物理地址，
+如果在 TLB 中找到了对应的映射关系，就可以直接进行地址转换，从而提高系统的运行效率。
+当操作系统修改了某个虚拟页面的映射关系时，需要刷新该虚拟页面所在的页表项在 TLB 中的缓存。
+否则，当处理器访问该虚拟页面时，会使用已经过期的页表项进行地址转换，导致地址转换错误或者访问了错误的物理页面
+ */
 // 刷新虚拟地址 vaddr 的 块表 TLB
 void flush_tlb(u32 vaddr)
 {
@@ -303,7 +301,70 @@ void flush_tlb(u32 vaddr)
                  : "memory");
 }
 
+// 从位图中扫描 count 个连续的页
+static u32 scan_page(bitmap_t *map, u32 count)
+{
+    assert(count > 0);
+
+    int32 index = bitmap_scan(map, count);
+
+    if(index == EOF)
+    {
+        panic("Scan page fail!!!");
+    }
+    u32 addr = PAGE(index);
+    LOGK("Scan page 0x%p count %d\n",addr,count);
+    return addr;
+
+}
+
+// 与 scan_page 相对，重置相应的页
+static void reset_page(bitmap_t *map, u32 addr, u32 count)
+{
+    ASSERT_PAGE(addr);
+    assert(count > 0);
+    u32 index = IDX(addr);
+
+    for (size_t i = 0; i < count; i++)
+    {
+        assert(bitmap_test(map, index + i));
+        bitmap_set(map, index + i, 0);
+    }
+}
+
+// 分配 count 个连续的内核页
+u32 alloc_kpage(u32 count)
+{
+    assert(count > 0);
+    u32 vaddr = scan_page(&kernel_map, count);
+    LOGK("ALLOC kernel pages 0x%p count %d\n", vaddr, count);
+    return vaddr;
+}
+
+// 释放 count 个连续的内核页
+void free_kpage(u32 vaddr, u32 count)
+{
+    ASSERT_PAGE(vaddr);
+    assert(count > 0);
+    reset_page(&kernel_map, vaddr, count);
+    LOGK("FREE  kernel pages 0x%p count %d\n", vaddr, count);
+}
 
 
+void memory_test()
+{
+    u32 *pages = (u32 *)(0x200000);
+    u32 count = 0x6fe;
+    for(size_t i=0; i < count; i++)
+    {
+        
+        pages[i] = alloc_kpage(1);
+        LOGK("0x%x\n",i);
+    }
 
+    for (size_t i = 0; i < count; i++)
+    {
+        free_kpage(pages[i],1);
+    }
+}
 

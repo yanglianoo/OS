@@ -26,10 +26,10 @@ void kernel_init()
     // time_init();
     // //实时时钟初始化
     // rtc_init();
-    // memory_test();
+    memory_test();
     
 
-    bitmap_tests();
+    // bitmap_tests();
 
 
     // asm volatile("sti");

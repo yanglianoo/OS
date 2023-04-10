@@ -125,6 +125,7 @@ int bitmap_scan(bitmap_t *map, u32 count)
 u8 buf[LEN];  //位图起始位置
 bitmap_t map; //位图结构体
 
+//位图测试代码
 void bitmap_tests()
 {
     bitmap_init(&map, buf, LEN,0);
