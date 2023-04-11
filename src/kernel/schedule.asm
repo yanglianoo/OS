@@ -1,3 +1,6 @@
+[bits 32]
+
+section .text
 ; 切换任务的函数
 global task_switch
 task_switch:

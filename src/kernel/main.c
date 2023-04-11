@@ -21,20 +21,21 @@ void kernel_init()
     //中断初始化
     interrupt_init();
     // //时钟初始化
-    // clock_init();
+    clock_init();
     // //时间戳初始化
     // time_init();
     // //实时时钟初始化
     // rtc_init();
-    memory_test();
+    //memory_test();
     
 
     // bitmap_tests();
-
+    task_init();
+    set_interrupt_state(true);
 
     // asm volatile("sti");
-    hang();
+    //hang();
 
-    return ;
+   // return ;
 
 }
