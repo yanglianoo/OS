@@ -37,7 +37,7 @@ typedef struct task_t
     u32 pde;                // 页目录物理地址
     struct bitmap_t *vmap;  // 进程虚拟内存位图
     u32 magic;              // 内核魔数，用于检测栈溢出
-}task_t;
+} task_t;
 
 //ABI 的寄存器，进程切换之前保存，进程切换之后恢复
 typedef struct task_frame_t

@@ -86,6 +86,7 @@ loading:
     db "Loading Onix...", 10, 13, 0; 10代表 \n\r
 detecting:
     db "Detecting Memory Success...", 10, 13, 0
+    
 error:
     mov si, .msg
     call print

@@ -13,10 +13,20 @@
 #include <onix/time.h>
 #include <onix/rtc.h>
 #include <onix/bitmap.h>
+
+#define LOGK(fmt,args...) DEBUGK(fmt,##args)
+void intr_test()
+{
+    bool intr = interrupt_disable();
+
+    set_interrupt_state(intr);
+}
 void kernel_init()
 {
 
+    //初始化内存映射表
     memory_map_init();
+    //初始化内存映射
     mapping_init();
     //中断初始化
     interrupt_init();
@@ -28,7 +38,6 @@ void kernel_init()
     // rtc_init();
     //memory_test();
     
-
     // bitmap_tests();
     task_init();
     set_interrupt_state(true);
@@ -36,6 +45,5 @@ void kernel_init()
     // asm volatile("sti");
     //hang();
 
-   // return ;
 
 }

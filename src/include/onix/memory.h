@@ -14,6 +14,11 @@ static u32 KERNEL_PAGE_TABLE[] = {
     0x2000,
     0x3000,
 };
+
+
+/**
+ * @brief  页表项、页目录项 数据结构定义   
+ */
 typedef struct page_entry_t
 {
     u8 present : 1;  // 在内存中
@@ -25,10 +30,8 @@ typedef struct page_entry_t
     u8 dirty : 1;    // 脏页，表示该页缓冲被写过
     u8 pat : 1;      // page attribute table 页大小 4K/4M
     u8 global : 1;   // 全局，所有进程都用到了，该页不刷新缓冲
-    u8 shared : 1;   // 共享内存页，与 CPU 无关
-    u8 privat : 1;   // 私有内存页，与 CPU 无关
-    u8 readonly : 1; // 只读内存页，与 CPU 无关
-    u32 index : 20;  // 页索引
+    u8 ignored: 3; 
+    u32 index : 20;  // 物理页地址  31~12位
 } _packed page_entry_t;
 
 
@@ -41,6 +44,10 @@ void set_cr3(u32 pde);
 
 void memory_test();
 void memory_map_init();
+
+/**
+ * @brief  内存映射初始化
+ */
 void mapping_init();
 
 //分配 count 个连续的内核页

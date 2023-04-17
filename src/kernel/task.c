@@ -16,7 +16,7 @@
 #include <onix/onix.h>
 #include <onix/string.h>
 
-#define PAGE_SIZE 0x1000  //一页 = 4Kb
+
 
 extern bitmap_t kernel_map;
 extern void task_switch(task_t *next); 
@@ -34,6 +34,7 @@ static task_t *get_free_task()
     {
         if (task_table[i] == NULL)
         {
+            //分配一页内存，一页内存表示一个任务
             task_table[i] = (task_t *)alloc_kpage(1);
             return task_table[i];
         }
@@ -43,40 +44,39 @@ static task_t *get_free_task()
 
 /**
  * @brief  从任务数组中查找某种状态的任务
- * @param  state: 
+ * @param  state: 任务状态
  * @return task_t*: 
  */
 static task_t *task_search(task_state_t state)
 {
     assert(!get_interrupt_state());
-
     task_t *task = NULL;
     task_t *current = running_task();
 
     for (size_t i = 0; i < NR_TASKS; i++)
     {
         task_t *ptr = task_table[i];
-        if(ptr == NULL)
+        if (ptr == NULL)
             continue;
-        if(ptr->state != state)
+
+        if (ptr->state != state)
             continue;
-        if(current == ptr)
+        if (current == ptr)
             continue;
-        if(task == NULL || task->ticks < ptr->ticks || ptr->jiffies < task->jiffies)
+        if (task == NULL || task->ticks < ptr->ticks || ptr->jiffies < task->jiffies)
             task = ptr;
     }
 
     return task;
-    
 }
+
 
 //得到当前的TASK:将esp三位抹掉，得到页开始的位置
 task_t *running_task()
 {
     asm volatile(
         "movl %esp, %eax\n"
-        "andl $0xfffff000, %eax\n"
-    );
+        "andl $0xfffff000, %eax\n");
 }
 
 
@@ -94,12 +94,13 @@ void schedule()
 
     if(current->state == TASK_RUNNING)
     {
+        //如果当前任务状态是执行，则将此任务状态置为就绪
         current->state = TASK_READY;
     }
 
     next->state = TASK_RUNNING;
     if(next == current)
-        return
+        return;
     
     task_switch(next);
 }
@@ -115,8 +116,9 @@ void schedule()
  */
 static task_t *task_create(target_t target, const char *name, u32 priority, u32 uid)
 {
+    //task为内核栈
     task_t *task = get_free_task();
-
+    //初始化内核栈
     memset(task , 0, PAGE_SIZE);
 
 
@@ -135,8 +137,10 @@ static task_t *task_create(target_t target, const char *name, u32 priority, u32 
 
     strcpy((char *)task->name, name);
 
-    task->stack = (u32 *)stack;
-    task->priority = priority;
+    
+    task->stack = (u32 *)stack; //设置任务栈顶地址
+
+    task->priority = priority; //设置任务优先级
     task->ticks = task->priority;
     task->jiffies = 0;
     task->state = TASK_READY;
@@ -219,8 +223,9 @@ u32  thread_c()
 void task_init()
 {
     task_setup();
-
-    task_create(thread_a,'a',5, KERNEL_USER);
-    task_create(thread_b,'b',5, KERNEL_USER);
-    task_create(thread_c,'c',5, KERNEL_USER);
+    
+    task_create(thread_a,"a",5, KERNEL_USER);
+    task_create(thread_b,"b",5, KERNEL_USER);
+    task_create(thread_c,"c",5, KERNEL_USER);
 }
+

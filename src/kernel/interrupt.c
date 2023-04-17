@@ -143,12 +143,11 @@ void set_interrupt_mask(u32 irq, bool enable)
     }
 }
 
-u32 counter = 0;
 void default_handler(int vector)
 {
     send_eoi(vector);
-    schedule();
-    // LOGK(" [%d] default interrupt called %d...\n",vector,counter++);
+   // schedule();
+    LOGK(" [%d] default interrupt called %d...\n",vector);
 }
 
 // 初始化外中断控制器

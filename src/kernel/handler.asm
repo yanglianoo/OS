@@ -19,6 +19,7 @@ interrupt_handler_%1:
 %endif
     ; 压入中断号
     push %1;
+    ; 跳转到终断入口
     jmp interrupt_entry
 %endmacro
 

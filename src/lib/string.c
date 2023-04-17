@@ -2,18 +2,18 @@
 
 
 //把 src 所指向的字符串复制到 dest。
-char* strcpy(char *dest, const char *src)
+
+char *strcpy(char *dest, const char *src)
 {
     char *ptr = dest;
     while (true)
     {
         *ptr++ = *src;
-        if(*src++ == EOS)
-        {
+        if (*src++ == EOS)
             return dest;
-        }
     }
 }
+
 //把 src 所指向的字符串追加到 dest 所指向的字符串的结尾。
 char* strcat(char *dest, const char *src)
 {
