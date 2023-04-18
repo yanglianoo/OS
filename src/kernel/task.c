@@ -34,7 +34,7 @@ static task_t *get_free_task()
     {
         if (task_table[i] == NULL)
         {
-            //分配一页内存，一页内存表示一个任务
+            //分配一页内存，一页内存表示一个任务，顺序分配
             task_table[i] = (task_t *)alloc_kpage(1);
             return task_table[i];
         }
@@ -71,17 +71,20 @@ static task_t *task_search(task_state_t state)
 }
 
 
-//得到当前的TASK:将esp三位抹掉，得到页开始的位置
+/**
+ * @brief  得到当前的TASK:将esp三位抹掉，得到页开始的位置
+ * @return task_t*: 当前页的起始位置放置在 eax 中
+ */
 task_t *running_task()
 {
     asm volatile(
-        "movl %esp, %eax\n"
-        "andl $0xfffff000, %eax\n");
+        "movl %esp, %eax\n"             //将当前栈顶指针保存到eax中
+        "andl $0xfffff000, %eax\n");    //按位与运算将 eax 中的值的最后 12 位（即页内偏移）清零，得到其所在页的起始位置
 }
 
 
 /**
- * @brief  任务调度函数
+ * @brief  任务调度函数，调度到下一个任务，重置当前任务属性
  */
 void schedule()
 {
@@ -92,16 +95,25 @@ void schedule()
     assert(next != NULL);
     assert(next->magic == ONIX_MAGIC);
 
+    //如果当前任务状态是执行，则将此任务状态置为就绪
     if(current->state == TASK_RUNNING)
     {
-        //如果当前任务状态是执行，则将此任务状态置为就绪
+        
         current->state = TASK_READY;
     }
 
+    //如果当前任务的时间片为零了，则重新赋值该时间片
+    if (!current->ticks)
+    {
+        current->ticks = current->priority;
+    }
+    
+    //将下一个任务状态置为 TASK_RUNNING
     next->state = TASK_RUNNING;
     if(next == current)
         return;
     
+    //切换到下一个任务
     task_switch(next);
 }
 
@@ -180,6 +192,9 @@ static task_t *task_create(target_t target, const char *name, u32 priority, u32 
 //     schedule();
 // }
 
+/**
+ * @brief  初始化
+ */
 static void task_setup()
 {
     task_t *task = running_task();
@@ -224,8 +239,18 @@ void task_init()
 {
     task_setup();
     
+    //分别占用5个时间片
+    
+    
     task_create(thread_a,"a",5, KERNEL_USER);
     task_create(thread_b,"b",5, KERNEL_USER);
     task_create(thread_c,"c",5, KERNEL_USER);
 }
 
+/**
+ * @brief  bug出现的原因
+ * 在c语言中 字符常量 和 字符串常量是不一样的
+ * 在C语言中，字符常量使用单引号（' '）括起来，而字符串常量使用双引号（" "）括起来。
+ * 'a' 是 int 类型，而不是指针类型
+ * 字符常量是一个单个的字符，而字符串常量是一个以空字符('\0')结尾的字符数组
+ */

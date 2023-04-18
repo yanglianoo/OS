@@ -1,7 +1,7 @@
 #include <onix/console.h>
 #include <onix/io.h>
 #include <onix/string.h>
-
+#include <onix/interrupt.h>
 /*
 屏幕上所有字符以0为起始，默认为80*25模式，每行80个字符共25行
 屏幕上可以容纳2000个字符，坐标值范围是0~1999
@@ -186,6 +186,9 @@ extern void start_beep();
 //在显示器上写入字符串
 void console_write(char *buf,u32 count)
 {
+    //禁止中断
+    bool intr = interrupt_disable();
+    
     char ch;
     char *ptr = (char *)pos;
     while (count--)
@@ -238,6 +241,9 @@ void console_write(char *buf,u32 count)
         }
     }
     set_cursor(); 
+
+    //恢复中断
+    set_interrupt_state(intr);
 }
 
 void console_init()

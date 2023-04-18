@@ -51,6 +51,7 @@ void clock_handler(int vector)
     jiffies++;
     // DEBUGK("jiffiles = %d\n",jiffies);
     
+    //在时钟终端中进行任务切换
     task_t *task = running_task();
     assert(task->magic == ONIX_MAGIC);
 
@@ -58,7 +59,6 @@ void clock_handler(int vector)
     task->ticks--;
     if(!task->ticks)
     {
-        task->ticks = task->priority;
         schedule();
     }
 }
