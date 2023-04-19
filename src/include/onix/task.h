@@ -52,4 +52,6 @@ typedef struct task_frame_t
 task_t *running_task();
 void schedule();
 void task_init();
+
+void task_yield();
 #endif

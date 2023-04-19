@@ -39,7 +39,7 @@ void kernel_init()
     // bitmap_tests();
     task_init();
     syscall_init();
-    //set_interrupt_state(true);
+    set_interrupt_state(true);
 
     // asm volatile("sti");
     //hang();
