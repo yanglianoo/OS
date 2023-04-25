@@ -34,7 +34,7 @@ typedef struct gate_t
     u16 offset1;     //段内偏移 16 ~ 31位
 } _packed gate_t;
 
-typedef void *handler_t; // 中断处理函数
+typedef void* handler_t; // 中断处理函数
 void interrupt_init();
 void send_eoi(int vector);
 void set_interrupt_handler(u32 irq, handler_t handler);

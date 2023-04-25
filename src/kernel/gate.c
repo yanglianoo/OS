@@ -5,7 +5,7 @@
 
 #define LOGK(fmt,args...) DEBUGK(fmt, ##args)
 
-
+//支持 最大64个系统调用
 #define SYSCALL_SIZE 64
 
 handler_t syscall_table[SYSCALL_SIZE];
@@ -41,8 +41,9 @@ void syscall_init()
     {
         syscall_table[i] = sys_default;
     }
-
+    // 0 号系统调用为 test
     syscall_table[SYS_NR_TEST] = sys_test;
+    // 1 号系统调用为 yield
     syscall_table[SYS_NR_YIELD] = task_yield;
 }
 

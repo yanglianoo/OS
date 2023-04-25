@@ -183,6 +183,7 @@ void idt_init()
         gate->DPL = 0;              // 使用 int 指令访问的最低权限
         gate->present = 1;          // 是否有效
     }
+
     for(size_t i = 0; i < 0x20; i++)
     {
         handler_table[i] = exception_handler;
@@ -194,7 +195,7 @@ void idt_init()
 
 
 
-    // 初始化系统调用
+    // 初始化系统调用，从0x80开始为系统调用中断
     gate_t *gate = &idt[0x80];
     gate->offset0 = (u32)syscall_handler & 0xffff;
     gate->offset1 = ((u32)syscall_handler >> 16) & 0xffff;
