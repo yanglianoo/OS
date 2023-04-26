@@ -1,6 +1,0 @@
-{
-    "files.associations": {
-        "bitmap.h": "c",
-        "interrupt.h": "c"
-    }
-}
