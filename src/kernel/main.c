@@ -13,12 +13,7 @@ extern void task_init();
 extern void syscall_init();
 extern void hang();
 
-void intr_test()
-{
-    bool intr = interrupt_disable();
 
-    set_interrupt_state(intr);
-}
 void kernel_init()
 {
 

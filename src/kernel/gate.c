@@ -2,7 +2,7 @@
 #include <onix/assert.h>
 #include <onix/debug.h>
 #include <onix/syscall.h>
-
+#include <onix/task.h>
 #define LOGK(fmt,args...) DEBUGK(fmt, ##args)
 
 //支持 最大64个系统调用
@@ -27,9 +27,23 @@ static u32 sys_default()
     panic("syscall not implemented!!!");
 }
 
+
+task_t *task = NULL;
 static u32 sys_test()
 {
-    LOGK("syscall test...\n");
+    //LOGK("syscall test...\n");
+    if(!task)
+    {
+        task = running_task();
+
+        task_block(task, NULL, TASK_BLOCKED);
+    }
+    else
+    {
+        task_unblock(task);
+
+        task = NULL;
+    }
     return 255;
 }
 
@@ -37,6 +51,7 @@ extern void task_yield();
 
 void syscall_init()
 {
+    // 初始化所有系统调用，支持 64 个系统调用
     for (size_t i = 0; i < SYSCALL_SIZE; i++)
     {
         syscall_table[i] = sys_default;

@@ -15,7 +15,7 @@
 #include <onix/assert.h>
 #include <onix/onix.h>
 #include <onix/string.h>
-
+#include <onix/thread.h>
 
 
 extern bitmap_t kernel_map;
@@ -23,6 +23,8 @@ extern void task_switch(task_t *next);
 
 #define NR_TASKS 64
 static task_t *task_table[NR_TASKS]; //所有任务的数组
+static list_t block_list;            //任务默认阻塞链表  
+static task_t *idle_task; 
 
 /**
  * @brief  从task_table里获得一个空闲的任务
@@ -67,6 +69,11 @@ static task_t *task_search(task_state_t state)
             task = ptr;
     }
 
+    //如果找不到可运行的进程，则运行空闲进程
+    if(task == NULL && state == TASK_READY)
+    {
+        task = idle_task;
+    }
     return task;
 }
 
@@ -194,6 +201,45 @@ static task_t *task_create(target_t target, const char *name, u32 priority, u32 
 //     schedule();
 // }
 
+//任务阻塞
+void task_block(task_t *task, list_t *blist, task_state_t state)
+{
+    assert(!get_interrupt_state());
+    assert(task->node.next == NULL);
+    assert(task->node.prev == NULL);
+
+    if (blist == NULL)
+    {
+        blist = &block_list;
+    }
+    
+    list_push(blist, &task->node);
+
+    assert(state != TASK_READY && state != TASK_RUNNING);
+
+    task->state = state;
+
+    task_t *current = running_task();
+
+    if(current == task)
+    {
+        schedule();
+    }
+}
+
+//解除任务阻塞
+void task_unblock(task_t *task)
+{
+    assert(!get_interrupt_state());
+
+    list_remove(&task->node);
+
+    assert(task->node.prev == NULL);
+    assert(task->node.next == NULL);
+
+    task->state - TASK_READY;
+}
+
 /**
  * @brief  初始化
  */
@@ -206,6 +252,7 @@ static void task_setup()
     memset(task_table, 0, sizeof(task_table));
 }
 
+
 void task_yield()
 {
     schedule();
@@ -217,6 +264,7 @@ u32  thread_a()
     while (true)
     {
         printk("A");
+       // test();
         yield();
     }
     
@@ -228,6 +276,7 @@ u32  thread_b()
     while (true)
     {
         printk("B");
+        //test();
         yield();
     }
     
@@ -239,22 +288,29 @@ u32  thread_c()
     while (true)
     {
         printk("C");
+        //test();
         yield();
     }
 }
 
 
 
+
 void task_init()
 {
+    list_init(&block_list);
     task_setup();
     
-    //分别占用5个时间片
+    //分别占用5个时间片，时间片代表优先级，所占用时间片越多，优先级越高
     
     
-    task_create(thread_a,"a",5, KERNEL_USER);
-    task_create(thread_b,"b",5, KERNEL_USER);
-    task_create(thread_c,"c",5, KERNEL_USER);
+    // task_create(thread_a,"a",5, KERNEL_USER);
+    // task_create(thread_b,"b",5, KERNEL_USER);
+    // task_create(thread_c,"c",5, KERNEL_USER);
+
+
+    idle_task = task_create(idle_thread, "idle", 1 , KERNEL_USER);
+    task_create(init_thread, "init", 5 , NORMAL_USER);
 }
 
 /**
