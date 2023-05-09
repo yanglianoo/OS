@@ -11,4 +11,8 @@ extern void idle_thread();
  */
 extern void init_thread();
 
+/**
+ * @brief  测试任务
+ */
+extern void test_thread();
 #endif

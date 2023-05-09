@@ -17,18 +17,24 @@
 #include <onix/string.h>
 #include <onix/thread.h>
 
+#define NR_TASKS 64
+
+extern u32 volatile jiffies;
+extern u32 jiffy;
 
 extern bitmap_t kernel_map;
 extern void task_switch(task_t *next); 
 
-#define NR_TASKS 64
+
 static task_t *task_table[NR_TASKS]; //所有任务的数组
 static list_t block_list;            //任务默认阻塞链表  
-static task_t *idle_task; 
+static task_t sleep_list;    //睡眠任务链表
+
+static task_t *idle_task;            //空闲任务链表
 
 /**
  * @brief  从task_table里获得一个空闲的任务
- * @return task_t*: 
+ * @return task_t*: 空闲任务的指针
  */
 static task_t *get_free_task()
 {
@@ -202,6 +208,7 @@ static task_t *task_create(target_t target, const char *name, u32 priority, u32 
 // }
 
 //任务阻塞
+// 任务阻塞
 void task_block(task_t *task, list_t *blist, task_state_t state)
 {
     assert(!get_interrupt_state());
@@ -212,7 +219,7 @@ void task_block(task_t *task, list_t *blist, task_state_t state)
     {
         blist = &block_list;
     }
-    
+
     list_push(blist, &task->node);
 
     assert(state != TASK_READY && state != TASK_RUNNING);
@@ -220,24 +227,97 @@ void task_block(task_t *task, list_t *blist, task_state_t state)
     task->state = state;
 
     task_t *current = running_task();
-
-    if(current == task)
+    if (current == task)
     {
         schedule();
     }
 }
 
-//解除任务阻塞
+// 解除任务阻塞
 void task_unblock(task_t *task)
 {
     assert(!get_interrupt_state());
 
     list_remove(&task->node);
 
-    assert(task->node.prev == NULL);
     assert(task->node.next == NULL);
+    assert(task->node.prev == NULL);
 
-    task->state - TASK_READY;
+    task->state = TASK_READY;
+}
+
+
+
+
+/**
+ * @brief  睡眠系统调用函数
+ * @param  ms: 睡眠时间参数
+ */
+void task_sleep(u32 ms)
+{
+    assert(!get_interrupt_state());  //不可中断
+
+    
+    u32 ticks = ms / jiffy;  //计算睡眠时间需要的时间片
+    ticks = ticks > 0 ? ticks : 1;
+
+    task_t *current = running_task();
+    current->ticks = jiffies + ticks;
+
+
+    list_t *list = &sleep_list;
+    list_node_t *anchor = &list->tail;
+
+    for (list_node_t *ptr = list->head.next; ptr != &list->tail; ptr = ptr->next)
+    {
+        task_t *task = element_entry(task_t, node, ptr);
+
+        if (task->ticks > current->ticks)
+        {
+            anchor = ptr;
+            break;
+        }
+    }
+
+    assert(current->node.next == NULL);
+    assert(current->node.prev == NULL);
+
+    list_insert_before(anchor, &current->node);
+
+    current->state = TASK_SLEEPING;
+
+    //
+    schedule();
+}
+
+/**
+ * @brief  唤醒任务
+ */
+void task_wakeup()
+{
+    assert(!get_interrupt_state()); // 不可中断
+
+    // 从睡眠链表中找到 ticks 小于等于 jiffies 的任务，恢复执行
+    list_t *list = &sleep_list;
+    for (list_node_t *ptr = list->head.next; ptr != &list->tail;)
+    {
+        task_t *task = element_entry(task_t, node, ptr);
+        if (task->ticks > jiffies)
+        {
+            break;
+        }
+
+        // unblock 会将指针清空
+        ptr = ptr->next;
+
+        task->ticks = 0;
+        task_unblock(task);
+    }
+}
+
+void task_yield()
+{
+    schedule();
 }
 
 /**
@@ -252,53 +332,11 @@ static void task_setup()
     memset(task_table, 0, sizeof(task_table));
 }
 
-
-void task_yield()
-{
-    schedule();
-}
-
-u32  thread_a()
-{
-    set_interrupt_state(true);
-    while (true)
-    {
-        printk("A");
-       // test();
-        yield();
-    }
-    
-}
-
-u32  thread_b()
-{
-    set_interrupt_state(true);
-    while (true)
-    {
-        printk("B");
-        //test();
-        yield();
-    }
-    
-}
-
-u32  thread_c()
-{
-    set_interrupt_state(true);
-    while (true)
-    {
-        printk("C");
-        //test();
-        yield();
-    }
-}
-
-
-
-
 void task_init()
 {
     list_init(&block_list);
+    list_init(&sleep_list);
+
     task_setup();
     
     //分别占用5个时间片，时间片代表优先级，所占用时间片越多，优先级越高
@@ -309,8 +347,9 @@ void task_init()
     // task_create(thread_c,"c",5, KERNEL_USER);
 
 
-    idle_task = task_create(idle_thread, "idle", 1 , KERNEL_USER);
-    task_create(init_thread, "init", 5 , NORMAL_USER);
+    idle_task = task_create(idle_thread, "idle", 1, KERNEL_USER);
+    task_create(init_thread, "init", 5, NORMAL_USER);
+    task_create(test_thread, "test", 5, KERNEL_USER);
 }
 
 /**

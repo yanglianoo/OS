@@ -8,6 +8,7 @@
 //支持 最大64个系统调用
 #define SYSCALL_SIZE 64
 
+// 系统调用函数数组
 handler_t syscall_table[SYSCALL_SIZE];
 
 
@@ -47,7 +48,8 @@ static u32 sys_test()
     return 255;
 }
 
-extern void task_yield();
+
+
 
 void syscall_init()
 {
@@ -56,9 +58,11 @@ void syscall_init()
     {
         syscall_table[i] = sys_default;
     }
-    // 0 号系统调用为 test
+    
     syscall_table[SYS_NR_TEST] = sys_test;
-    // 1 号系统调用为 yield
+
+    syscall_table[SYS_NR_SLEEP] = task_sleep;
+    
     syscall_table[SYS_NR_YIELD] = task_yield;
 }
 

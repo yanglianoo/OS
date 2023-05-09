@@ -1,6 +1,6 @@
+
 #include <onix/list.h>
 #include <onix/assert.h>
-
 
 // 初始化链表
 void list_init(list_t *list)
@@ -21,7 +21,6 @@ void list_insert_before(list_node_t *anchor, list_node_t *node)
     anchor->prev = node;
 }
 
-
 // 在 anchor 结点后插入结点 node
 void list_insert_after(list_node_t *anchor, list_node_t *node)
 {
@@ -32,14 +31,12 @@ void list_insert_after(list_node_t *anchor, list_node_t *node)
     anchor->next = node;
 }
 
-
 // 插入到头结点后
 void list_push(list_t *list, list_node_t *node)
 {
     assert(!list_search(list, node));
     list_insert_after(&list->head, node);
 }
-
 
 // 移除头结点后的结点
 list_node_t *list_pop(list_t *list)
@@ -52,14 +49,12 @@ list_node_t *list_pop(list_t *list)
     return node;
 }
 
-
 // 插入到尾结点前
 void list_pushback(list_t *list, list_node_t *node)
 {
     assert(!list_search(list, node));
     list_insert_before(&list->tail, node);
 }
-
 
 // 移除尾结点前的结点
 list_node_t *list_popback(list_t *list)
@@ -71,7 +66,6 @@ list_node_t *list_popback(list_t *list)
 
     return node;
 }
-
 
 // 查找链表中结点是否存在
 bool list_search(list_t *list, list_node_t *node)
@@ -85,7 +79,6 @@ bool list_search(list_t *list, list_node_t *node)
     }
     return false;
 }
-
 
 // 从链表中删除结点
 void list_remove(list_node_t *node)
@@ -104,7 +97,6 @@ bool list_empty(list_t *list)
 {
     return (list->head.next == &list->tail);
 }
-
 
 // 获得链表长度
 u32 list_size(list_t *list)

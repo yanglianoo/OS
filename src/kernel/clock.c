@@ -14,7 +14,7 @@
 #define HZ 100   //中断频率100HZ
 #define OSCILLATOR 1193182  //原始振荡器频率
 #define CLOCK_COUNTER (OSCILLATOR / HZ) 
-#define JIFFY (1000 / HZ)
+#define JIFFY (1000 / HZ)  //每 1 ms 所需的时间片
 
 #define SPEAKER_REG 0x61
 #define BEEP_HZ 440
@@ -42,22 +42,25 @@ void stop_beep()
         beeping = 0;
     }
 }
+
+extern void task_wakeup();
 void clock_handler(int vector)
 {
     assert(vector == 0x20);
-    send_eoi(vector);
-    stop_beep();
-    //全局时间片加加
+    send_eoi(vector); // 发送中断处理结束
+
+    stop_beep();   // 检测并停止蜂鸣器
+    task_wakeup(); // 唤醒睡眠结束的任务
+
     jiffies++;
-    // DEBUGK("jiffiles = %d\n",jiffies);
-    
-    //在时钟中断中进行任务切换
+    // DEBUGK("clock jiffies %d ...\n", jiffies);
+
     task_t *task = running_task();
     assert(task->magic == ONIX_MAGIC);
 
     task->jiffies = jiffies;
     task->ticks--;
-    if(!task->ticks)
+    if (!task->ticks)
     {
         schedule();
     }
