@@ -50,6 +50,7 @@ $(BUILD)/kernel.bin: $(BUILD)/kernel/start.o \
 		$(BUILD)/kernel/thread.o    \
 		$(BUILD)/kernel/task.o    \
 		$(BUILD)/kernel/gate.o    \
+		$(BUILD)/kernel/mutex.o    \
 		$(BUILD)/lib/bitmap.o    \
 		$(BUILD)/lib/string.o   \
 		$(BUILD)/lib/vsprintf.o   \

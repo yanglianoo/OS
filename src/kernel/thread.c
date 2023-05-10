@@ -2,10 +2,11 @@
 #include <onix/syscall.h>
 #include <onix/debug.h>
 #include <onix/thread.h>
+#include <onix/mutex.h>
 #define LOGK(fmt, args...) DEBUGK(fmt, ##args)
 
 /**
- * @brief  空闲任务
+ * @brief  空闲进程
  */
 void idle_thread()
 {
@@ -22,19 +23,29 @@ void idle_thread()
     }
 }
 
+mutex_t mutex;
+
+/**
+ * @brief  初始化进程
+ */
 void init_thread()
 {
+    mutex_init(&mutex);
     set_interrupt_state(true);
     u32 counter = 0;
 
     while (true)
     {
+       mutex_lock(&mutex);
         LOGK("init task %d....\n", counter++);
-        sleep(500);
+        mutex_unlock(&mutex);
+        //sleep(500);
     }
 }
 
-
+/**
+ * @brief  测试进程
+ */
 void test_thread()
 {
     set_interrupt_state(true);
@@ -42,7 +53,9 @@ void test_thread()
 
     while (true)
     {
+        mutex_lock(&mutex);
         LOGK("test task %d....\n", counter++);
-        sleep(709);
+        mutex_unlock(&mutex);
+        //sleep(709);
     }
 }

@@ -186,8 +186,8 @@ extern void start_beep();
 //在显示器上写入字符串
 void console_write(char *buf,u32 count)
 {
-    //禁止中断
-    bool intr = interrupt_disable();
+    // //禁止中断
+    // bool intr = interrupt_disable();
     
     char ch;
     char *ptr = (char *)pos;
@@ -242,8 +242,8 @@ void console_write(char *buf,u32 count)
     }
     set_cursor(); 
 
-    //恢复中断
-    set_interrupt_state(intr);
+    // //恢复中断
+    // set_interrupt_state(intr);
 }
 
 void console_init()
