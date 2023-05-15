@@ -1,6 +1,6 @@
 /**
  * @File Name: bitmap.c
- * @brief  ：位图bitmap
+ * @brief  ：位图bitmap，用于描述内存页的使用情况
  * @Author : Timer email:330070781@qq.com
  * @Version : 1.0
  * @Creat Date : 2023-04-09

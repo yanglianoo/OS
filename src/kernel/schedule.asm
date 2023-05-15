@@ -1,7 +1,7 @@
 [bits 32]
 
 section .text
-; 切换任务的函数
+; 任务切换保存上下文
 global task_switch
 task_switch:
     ; 保存栈帧，将sp的值存到bp寄存器中

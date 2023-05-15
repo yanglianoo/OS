@@ -1,3 +1,11 @@
+/**
+ * @File Name: mutex.c
+ * @brief  
+ * @Author : Timer email:330070781@qq.com
+ * @Version : 1.0
+ * @Creat Date : 2023-05-15
+ * 
+ */
 #include <onix/mutex.h>
 #include <onix/task.h>
 #include <onix/interrupt.h>
@@ -52,7 +60,52 @@ void mutex_unlock(mutex_t *mutex)
         task_yield();
     }
 
-    
     // 恢复之前的中断状态
     set_interrupt_state(intr);
+}
+
+
+// 自旋锁初始化
+void spin_init(spinlock_t *lock)
+{
+    lock->holder = NULL;
+    lock->repeat = 0;
+    mutex_init(&lock->mutex);
+}
+
+
+// 尝试持有锁
+void spin_lock(spinlock_t *lock)
+{
+    task_t *current = running_task();
+    if (lock->holder != current)
+    {
+        mutex_lock(&lock->mutex);
+        lock->holder = current;
+        assert(lock->repeat == 0);
+        lock->repeat = 1;
+    }
+    else
+    {
+        lock->repeat++;
+    }
+}
+
+
+// 释放锁
+void spin_unlock(spinlock_t *lock)
+{
+    task_t *current = running_task();
+    assert(lock->holder == current);
+    if (lock->repeat > 1)
+    {
+        lock->repeat--;
+        return;
+    }
+
+    assert(lock->repeat == 1);
+
+    lock->holder = NULL;
+    lock->repeat = 0;
+    mutex_unlock(&lock->mutex);
 }

@@ -15,7 +15,6 @@ pointer_t gdt_ptr;          //内核全局描述符表指针
 */
 void gdt_init()
 {
-    BMB;
     DEBUGK("init gdt!!!!\n");
     //将GDTR寄存器的值读入到 gdt_ptr中
     asm volatile("sgdt gdt_ptr");
@@ -26,5 +25,4 @@ void gdt_init()
     gdt_ptr.limit = sizeof(gdt) - 1;
     //加载将gdt_ptr内存中的值加载到GDTR寄存器中
     asm volatile("lgdt gdt_ptr\n");
-    BMB;
 }

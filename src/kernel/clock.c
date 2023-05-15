@@ -44,6 +44,10 @@ void stop_beep()
 }
 
 extern void task_wakeup();
+/**
+ * @brief  外部时钟中断函数，用于控制时间片
+ * @param  vector: 
+ */
 void clock_handler(int vector)
 {
     assert(vector == 0x20);

@@ -1,3 +1,11 @@
+/**
+ * @File Name: thread.c
+ * @brief  创建的进程函数
+ * @Author : Timer email:330070781@qq.com
+ * @Version : 1.0
+ * @Creat Date : 2023-05-15
+ * 
+ */
 #include <onix/interrupt.h>
 #include <onix/syscall.h>
 #include <onix/debug.h>
@@ -23,23 +31,23 @@ void idle_thread()
     }
 }
 
-mutex_t mutex;
+spinlock_t lock;
 
 /**
  * @brief  初始化进程
  */
 void init_thread()
 {
-    mutex_init(&mutex);
+     spin_init(&lock);
     set_interrupt_state(true);
     u32 counter = 0;
 
     while (true)
     {
-       mutex_lock(&mutex);
+        spin_lock(&lock);
         LOGK("init task %d....\n", counter++);
-        mutex_unlock(&mutex);
-        //sleep(500);
+        spin_unlock(&lock);
+        sleep(500);
     }
 }
 
@@ -53,9 +61,9 @@ void test_thread()
 
     while (true)
     {
-        mutex_lock(&mutex);
+        spin_lock(&lock);
         LOGK("test task %d....\n", counter++);
-        mutex_unlock(&mutex);
-        //sleep(709);
+        spin_unlock(&lock);
+        sleep(500);
     }
 }

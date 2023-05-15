@@ -323,7 +323,6 @@ void mapping_init()
 
     //设置cr3寄存器，将pde写入cr3寄存器
     set_cr3((u32)pde);
-    BMB;
     //启用分页机制
     enable_page();  
 }
@@ -435,7 +434,7 @@ void memory_test()
 #else
 void memory_test()
 {
-    BMB;
+
 
     // 将 20 M 0x1400000 内存映射到 64M 0x4000000 的位置
 
@@ -466,26 +465,19 @@ void memory_test()
     entry_init(tentry, IDX(paddr));
     printk("*tentry:0x%p\n",*tentry);
 
-    BMB;
+
     // 0x4000000 = 0000 0100 0000 0000 0000 0000 0000 0000
     // 高10位 = 0x10 页目录项地址为 ： 0x1000 + 0x10 = 0x1010 -> 0x900
     // 中10位 = 0x0  页表项地址为  ： 0x900 + 0 = 0x900 -> 0x1400 
     // 低10位 = 0x0  最后的物理地址为 ： 0x1400 + 0 = 0x1400 页
     char *ptr = (char *)(0x4000000);
     ptr[0] = 'a';
-
-    BMB;
-
     entry_init(tentry, IDX(0x1500000));
 
     //刷新页表
     flush_tlb(vaddr);
-
-    BMB;
-
     ptr[2] = 'b';
 
-    BMB;
 }
 
 // void memory_test()

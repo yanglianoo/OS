@@ -1,3 +1,11 @@
+/**
+ * @File Name: gate.c
+ * @brief  系统调用
+ * @Author : Timer email:330070781@qq.com
+ * @Version : 1.0
+ * @Creat Date : 2023-05-15
+ * 
+ */
 #include <onix/interrupt.h>
 #include <onix/assert.h>
 #include <onix/debug.h>

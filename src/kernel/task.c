@@ -27,10 +27,11 @@ extern void task_switch(task_t *next);
 
 
 static task_t *task_table[NR_TASKS]; //所有任务的数组
-static list_t block_list;            //任务默认阻塞链表  
-static task_t sleep_list;    //睡眠任务链表
 
-static task_t *idle_task;            //空闲任务链表
+static list_t block_list;            //任务默认阻塞链表  
+static list_t sleep_list;            //睡眠任务链表
+
+static task_t *idle_task;            //空闲任务指针
 
 /**
  * @brief  从task_table里获得一个空闲的任务
@@ -38,6 +39,7 @@ static task_t *idle_task;            //空闲任务链表
  */
 static task_t *get_free_task()
 {
+    //当创建一个任务时，会对task_table[i] 分配内存
     for (size_t i = 0; i < NR_TASKS; i++)
     {
         if (task_table[i] == NULL)
@@ -61,16 +63,19 @@ static task_t *task_search(task_state_t state)
     task_t *task = NULL;
     task_t *current = running_task();
 
+
     for (size_t i = 0; i < NR_TASKS; i++)
     {
         task_t *ptr = task_table[i];
         if (ptr == NULL)
             continue;
-
+        //判断任务状态，如果不等书传进来的状态，则继续搜寻
         if (ptr->state != state)
             continue;
+        //搜寻到当前任务，跳过
         if (current == ptr)
             continue;
+        // 比较任务剩余时间片 和 全局时间片
         if (task == NULL || task->ticks < ptr->ticks || ptr->jiffies < task->jiffies)
             task = ptr;
     }
@@ -103,8 +108,10 @@ void schedule()
 {
     assert(!get_interrupt_state());  //不可中断
 
+    //获取当前进程的指针
     task_t *current = running_task();
 
+    //得到下一个准备执行进程的指针
     task_t *next = task_search(TASK_READY);
 
     assert(next != NULL);
@@ -128,7 +135,7 @@ void schedule()
     if(next == current)
         return;
     
-    //切换到下一个任务
+    //切换到下一个任务，此函数用汇编实现，遵循x86 的ABI规定
     task_switch(next);
 }
 
@@ -139,13 +146,13 @@ void schedule()
  * @param  name: 任务名称
  * @param  priority: 任务优先级
  * @param  uid: 任务id
- * @return task_t*: 
+ * @return task_t*: 任务指针
  */
 static task_t *task_create(target_t target, const char *name, u32 priority, u32 uid)
 {
-    //task为内核栈
+    //task为内核栈，为当前创建的任务分配内核栈内存，内存大小为1页
     task_t *task = get_free_task();
-    //初始化内核栈
+    //初始化内核栈中的值全部为 0
     memset(task , 0, PAGE_SIZE);
 
 
@@ -178,40 +185,14 @@ static task_t *task_create(target_t target, const char *name, u32 priority, u32 
 
     return task;
 }
-// //创建任务，为任务分配栈空间
-// static void task_create(task_t *task, target_t target)
-// {
-//     u32 stack = (u32)task + PAGE_SIZE; //栈顶 = 栈起始 + 一页 
-
-//     stack -= sizeof(task_frame_t);     //减去 task_frame_t 的大小
-//     task_frame_t *frame = (task_frame_t *)stack;
-//     //保存寄存器的值
-
-//     frame->ebx = 0x11111111;
-//     frame->esi = 0x22222222;
-//     frame->edi = 0x33333333;
-//     frame->ebp = 0x44444444;
-
-//     //函数return 后会跳转到这里去执行，存储了下一条将要执行的指令在内存中的地址
-//     frame->eip = (void *)target; //指向要创建的任务
-
-//     //当前task的栈区位置
-//     task->stack = (u32 *)stack;
-// }
 
 
-// void task_init()
-// {
-//     task_create(a, thread_a); //创建task a的栈
-//     task_create(b, thread_b); //创建task b的栈
-//     schedule();
-// }
 
-//任务阻塞
 // 任务阻塞
 void task_block(task_t *task, list_t *blist, task_state_t state)
 {
     assert(!get_interrupt_state());
+    
     assert(task->node.next == NULL);
     assert(task->node.prev == NULL);
 
@@ -315,6 +296,9 @@ void task_wakeup()
     }
 }
 
+/**
+ * @brief  主动放弃 CPU 执行权
+ */
 void task_yield()
 {
     schedule();
@@ -334,19 +318,15 @@ static void task_setup()
 
 void task_init()
 {
+    //初始化阻塞任务链表 和睡眠任务链表
     list_init(&block_list);
     list_init(&sleep_list);
 
+    //初始化任务
     task_setup();
     
     //分别占用5个时间片，时间片代表优先级，所占用时间片越多，优先级越高
     
-    
-    // task_create(thread_a,"a",5, KERNEL_USER);
-    // task_create(thread_b,"b",5, KERNEL_USER);
-    // task_create(thread_c,"c",5, KERNEL_USER);
-
-
     idle_task = task_create(idle_thread, "idle", 1, KERNEL_USER);
     task_create(init_thread, "init", 5, NORMAL_USER);
     task_create(test_thread, "test", 5, KERNEL_USER);
