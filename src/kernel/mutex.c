@@ -34,7 +34,7 @@ void mutex_lock(mutex_t *mutex)
 
     // 无人持有
     assert(mutex->value == false);
-        // 持有
+    // 持有
     mutex->value++;
     assert(mutex->value == true);
     // 恢复之前的中断状态

@@ -110,3 +110,46 @@
     asm volatile("lgdt gdt_ptr\n");
     ```
     `volatile`是为了告诉编译器后面的代码不能被优化，直接一步步执行
+
+## BUG记录
+
+- 在WSL 中，grub 引导 multiboot2 的头报错
+
+  ```sh
+  # 安装 grub 
+  sudo apt install grub2-common
+  # 安装 xorriso 
+  sudo apt-get install xorriso
+  ```
+
+  `make qemub` 报错
+
+  ```
+  Booting from Floppy...
+  Boot failed: could not read the boot disk
+  
+  Booting from DVD/CD...
+  Boot failed: Could not read from CDROM (code 0004)
+  Booting from ROM...
+  iPXE (PCI 00:03.0) starting execution...ok
+  iPXE initializing devices...ok
+  
+  iPXE 1.0.0+git-20131111.c3d1e78-2ubuntu1.1 -- Open Source Network Boot Firmware
+  -- http://ipxe.org
+  Features: HTTP HTTPS iSCSI DNS TFTP AoE bzImage ELF MBOOT PXE Menu
+  
+  net0: 52:54:00:12:34:56 using 82549em on PCI00:03.0 (open)
+    [Link:up, TX:0 TXE:0 RX:0 RXE:01]
+  Configuring (net0 52:54:00:12:34:56)...ok
+  net0: 10.0.2.15/255.255.255.0 gw 10.0.2.2
+  Nothing to boot: No such file for directory (http://ipxe.org/2d03e13b)
+  No more network devices
+  
+  No bootable device.
+  ```
+
+  > 问题解决：[qemu, "Booting from DVD/CD... Boot failed: Could not read from CDROM" · Issue #1043 · microsoft/WSL (github.com)](https://github.com/microsoft/WSL/issues/1043)
+  >
+  > `sudo apt-get install grub-pc-bin`
+
+​		

@@ -1,6 +1,8 @@
 BUILD:=../build
 SRC:=.
-ENTRYPOINT:=0x10000 #内核程序入口地址
+
+MULTIBOOT2:= 0x10000 #MULTIBOOT2 起始地址
+ENTRYPOINT:= 0x10040 #内核程序入口地址
 
 CFLAGS:= -m32 #32位的程序
 CFLAGS+= -fno-builtin #不需要gcc内置函数
@@ -31,6 +33,11 @@ $(BUILD)/%.o: $(SRC)/%.c
 	$(shell mkdir -p $(dir $@))
 	gcc $(CFLAGS) $(DEBUG) $(INCLUDE) -c $< -o $@
 
+LDFLAGS:= -m elf_i386 \
+		  -static \
+		  -Ttext $(ENTRYPOINT) \
+		  --section-start=.multiboot2=$(MULTIBOOT2)
+LDFLAGS:= $(strip ${LDFLAGS})
 #编译生成kernel.bin,此时生成的kernel.bin为elf格式
 $(BUILD)/kernel.bin: $(BUILD)/kernel/start.o \
 		$(BUILD)/kernel/main.o	\
@@ -56,9 +63,11 @@ $(BUILD)/kernel.bin: $(BUILD)/kernel/start.o \
 		$(BUILD)/lib/vsprintf.o   \
 		$(BUILD)/lib/syscall.o   \
 		$(BUILD)/lib/list.o   \
-		$(BUILD)/lib/stdlib.o   
-	$(shell mkdir -p $(dir $@))
-	ld -m elf_i386 -static $^ -o $@ -Ttext $(ENTRYPOINT)   
+		$(BUILD)/lib/stdlib.o   \
+
+		
+		$(shell mkdir -p $(dir $@))
+		ld $(LDFLAGS)  $^ -o $@
 #编译生成system.bin文件，将elf heaer头去掉
 $(BUILD)/system.bin:$(BUILD)/kernel.bin
 	objcopy -O binary $< $@
@@ -84,6 +93,18 @@ $(BUILD)/master.img: $(BUILD)/boot/boot.bin \
 	dd if=$(BUILD)/system.bin of=$@ bs=512 count=200 seek=10 conv=notrunc   
 
 
+$(BUILD)/kernel.iso : $(BUILD)/kernel.bin $(SRC)/utils/grub.cfg
+
+# 检测内核文件是否合法
+	grub-file --is-x86-multiboot2 $<
+# 创建 iso 目录
+	mkdir -p $(BUILD)/iso/boot/grub
+# 拷贝内核文件
+	cp $< $(BUILD)/iso/boot
+# 拷贝 grub 配置文件
+	cp $(SRC)/utils/grub.cfg $(BUILD)/iso/boot/grub
+# 生成 iso 文件
+	grub-mkrescue -o $@ $(BUILD)/iso
 
 .PHONY: test
 test: $(BUILD)/master.img
@@ -100,17 +121,33 @@ bochs: $(BUILD)/master.img
 
 QEMU:=	qemu-system-i386 \
 	-m 32M \
-	-boot c \
-	-drive file=$(BUILD)/master.img,if=ide,index=0,media=disk,format=raw \
 	-rtc base=localtime 
 
 .PHONY: qemu
 qemu: $(BUILD)/master.img
-	$(QEMU)
+	$(QEMU) $(QEMU_DISK)
 
 .PHONY: qemug
 qemug: $(BUILD)/master.img
-	$(QEMU) -s -S
+	$(QEMU) $(QEMU_DISK) $(QEMU_DEBUG)
+
+
+QEMU_DISK:=-boot c \
+	-drive file=$(BUILD)/master.img,if=ide,index=0,media=disk,format=raw \
+
+QEMU_CDROM:=-boot d \
+	-drive file=$(BUILD)/kernel.iso,media=cdrom \
+
+QEMU_DEBUG:= -s -S
+
+
+.PHONY: bochsb
+bochsb: $(BUILD)/kernel.iso	
+	bochs -q -f ../bochs/bochsrc.grub -unlock
+.PHONY: qemub
+qemub: $(BUILD)/kernel.iso
+	$(QEMU) $(QEMU_CDROM) \
+
 
 # 将qemu格式的镜像转换为vmware格式的镜像
 $(BUILD)/master.vmdk: $(BUILD)/master.img
