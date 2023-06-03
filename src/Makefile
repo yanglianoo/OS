@@ -1,8 +1,8 @@
 BUILD:=../build
 SRC:=.
 
-MULTIBOOT2:= 0x10000 #MULTIBOOT2 起始地址
-ENTRYPOINT:= 0x10040 #内核程序入口地址
+MULTIBOOT2:= 0x10000 # MULTIBOOT2 起始地址
+ENTRYPOINT:= 0x10040 #内核程序入口地址，MULTIBOOT2 头占据64个字节
 
 CFLAGS:= -m32 #32位的程序
 CFLAGS+= -fno-builtin #不需要gcc内置函数
@@ -93,6 +93,7 @@ $(BUILD)/master.img: $(BUILD)/boot/boot.bin \
 	dd if=$(BUILD)/system.bin of=$@ bs=512 count=200 seek=10 conv=notrunc   
 
 
+# 使用 grub 引导程序
 $(BUILD)/kernel.iso : $(BUILD)/kernel.bin $(SRC)/utils/grub.cfg
 
 # 检测内核文件是否合法
@@ -138,12 +139,10 @@ QEMU_DISK:=-boot c \
 QEMU_CDROM:=-boot d \
 	-drive file=$(BUILD)/kernel.iso,media=cdrom \
 
+#启动qemu的gdb远程调试功能
 QEMU_DEBUG:= -s -S
 
 
-.PHONY: bochsb
-bochsb: $(BUILD)/kernel.iso	
-	bochs -q -f ../bochs/bochsrc.grub -unlock
 .PHONY: qemub
 qemub: $(BUILD)/kernel.iso
 	$(QEMU) $(QEMU_CDROM) \
