@@ -98,7 +98,7 @@ error:
 ;告诉编译器将如下的代码编译成32位的
 [bits 32]
 protect_mode:
-    xchg bx, bx
+    ;xchg bx, bx
     
     mov ax, data_selector
     mov ds, ax

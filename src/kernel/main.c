@@ -12,6 +12,7 @@ extern void rtc_init();
 extern void task_init();
 extern void syscall_init();
 extern void hang();
+extern void keyboard_init();
 
 
 void kernel_init()
@@ -25,19 +26,13 @@ void kernel_init()
     interrupt_init();
     // //时钟初始化
     clock_init();
+    //键盘初始化
+    keyboard_init();
     // //时间戳初始化
     // time_init();
-    // //实时时钟初始化
-    // rtc_init();
-    //memory_test();
     
-    // bitmap_tests();
     task_init();
     syscall_init();
     set_interrupt_state(true);
-
-    // asm volatile("sti");
-    //hang();
-
 
 }
