@@ -31,7 +31,7 @@ void idle_thread()
     }
 }
 
-
+extern u32 keyboard_read(char *buf, u32 count);
 /**
  * @brief  初始化进程
  */
@@ -40,12 +40,15 @@ void init_thread()
     set_interrupt_state(true);
     u32 counter = 0;
 
+    char ch;
     while (true)
     {
         
-        LOGK("init task %d....\n", counter++);
-        
-        sleep(500);
+        bool intr = interrupt_disable();
+        // 去缓冲区读数据
+        keyboard_read(&ch,1);
+        printk("%c",ch);
+        set_interrupt_state(intr);
     }
 }
 
@@ -60,7 +63,7 @@ void test_thread()
     while (true)
     {
         
-        LOGK("test task %d....\n", counter++);
+       // LOGK("test task %d....\n", counter++);
         sleep(500);
     }
 }

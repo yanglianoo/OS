@@ -2,7 +2,9 @@
 #include <onix/io.h>
 #include <onix/assert.h>
 #include <onix/debug.h>
-
+#include <onix/fifo.h>
+#include <onix/mutex.h>
+#include <onix/task.h>
 #define LOGK(fmt, args...) DEBUGK(fmt, ##args)
 
 /* 键盘的数据端口和控制端口 */
@@ -224,6 +226,13 @@ static char keymap[][4] = {
 };
 
 
+static lock_t lock;    // 锁
+static task_t *waiter; // 等待输入的任务
+
+#define BUFFER_SIZE 64        // 输入缓冲区大小
+static char buf[BUFFER_SIZE]; // 输入缓冲区
+static fifo_t fifo;           // 循环队列
+
 static bool capslock_state; // 大写锁定
 static bool scrlock_state;  // 滚动锁定
 static bool numlock_state;  // 数字锁定
@@ -379,10 +388,34 @@ void keyboard_handler(int vector)
     if (ch == INV)
         return;
 
-    LOGK("keydown %c \n", ch);
+    /* 将键盘输入的字符存到 buf[fifo->head],然后fifo->head++*/
+    fifo_put(&fifo,ch);
+    if(waiter != NULL)
+    {
+        task_unblock(waiter);
+        waiter = NULL;
+    }
 }
 
+/* 键盘输入读取 */
+u32 keyboard_read(char *buf, u32 count)
+{
+    lock_acquire(&lock);
+    int nr = 0;
+    while (nr < count)
+    {
+        while (fifo_empty(&fifo))
+        {
+            waiter = running_task();
+            task_block(waiter, NULL, TASK_BLOCKED);
+        }
 
+        buf[nr] = fifo_get(&fifo);
+        nr++;
+    }
+    lock_release(&lock);
+    return count;
+}
 
 
 
@@ -396,6 +429,12 @@ void keyboard_init()
     capslock_state = false;
     extcode_state = false;
 
+    //初始化队列
+    fifo_init(&fifo, buf , BUFFER_SIZE);
+    //初始化一把锁
+    lock_init(&lock);
+
+    waiter = NULL;
     set_leds();
 
     set_interrupt_handler(IRQ_KEYBOARD, keyboard_handler);
