@@ -16,13 +16,15 @@
 #include <onix/onix.h>
 #include <onix/string.h>
 #include <onix/thread.h>
-
+#include <onix/global.h>
 #define NR_TASKS 64
 
 extern u32 volatile jiffies;
 extern u32 jiffy;
 
 extern bitmap_t kernel_map;
+extern tss_t tss;
+
 extern void task_switch(task_t *next); 
 
 
@@ -89,6 +91,17 @@ static task_t *task_search(task_state_t state)
 }
 
 
+// 激活任务,维护全局唯一的tss段，如果下一个切换的任务的是用户态任务，则将下一个任务的栈顶指针保存到esp0中
+void task_activate(task_t *task)
+{
+    assert(task->magic == ONIX_MAGIC);
+
+    if (task->uid != KERNEL_USER)
+    {
+        tss.esp0 = (u32)task + PAGE_SIZE;
+    }
+}
+
 /**
  * @brief  得到当前的TASK:将esp三位抹掉，得到页开始的位置
  * @return task_t*: 当前页的起始位置放置在 eax 中
@@ -134,11 +147,12 @@ void schedule()
     next->state = TASK_RUNNING;
     if(next == current)
         return;
-    
+    /* 有问题 我觉得应该是保存当前内核态的栈指针 */
+    task_activate(next);
     //切换到下一个任务，此函数用汇编实现，遵循x86 的ABI规定
     task_switch(next);
 }
-
+ 
 
 /**
  * @brief  创建任务
@@ -304,6 +318,47 @@ void task_yield()
     schedule();
 }
 
+// 调用该函数的地方不能有任何局部变量
+// 调用前栈顶需要准备足够的空间
+void task_to_user_mode(target_t target)
+{
+    task_t *task = running_task();
+
+    u32 addr = (u32)task + PAGE_SIZE;
+
+    addr -= sizeof(intr_frame_t);
+    intr_frame_t *iframe = (intr_frame_t *)(addr);
+
+    iframe->vector = 0x20;
+    iframe->edi = 1;
+    iframe->esi = 2;
+    iframe->ebp = 3;
+    iframe->esp_dummy = 4;
+    iframe->ebx = 5;
+    iframe->edx = 6;
+    iframe->ecx = 7;
+    iframe->eax = 8;
+
+    iframe->gs = 0;
+    iframe->ds = USER_DATA_SELECTOR;
+    iframe->es = USER_DATA_SELECTOR;
+    iframe->fs = USER_DATA_SELECTOR;
+    iframe->ss = USER_DATA_SELECTOR;
+    iframe->cs = USER_CODE_SELECTOR;
+
+    iframe->error = ONIX_MAGIC;
+
+    u32 stack3 = alloc_kpage(1); // todo replace to user stack
+
+    iframe->eip = (u32)target;
+    iframe->eflags = (0 << 12 | 0b10 | 1 << 9);
+    iframe->esp = stack3 + PAGE_SIZE;
+
+    asm volatile(
+        "movl %0, %%esp\n"
+        "jmp interrupt_exit\n" ::"m"(iframe));
+}
+
 /**
  * @brief  初始化
  */
@@ -327,9 +382,9 @@ void task_init()
     
     //分别占用5个时间片，时间片代表优先级，所占用时间片越多，优先级越高
     
-    idle_task = task_create(idle_thread, "idle", 1, KERNEL_USER);
-    task_create(init_thread, "init", 5, NORMAL_USER);
-    task_create(test_thread, "test", 5, KERNEL_USER);
+    idle_task = task_create(idle_thread, "idle", 1, KERNEL_USER); //内核态进程
+    task_create(init_thread, "init", 5, NORMAL_USER);   //用户态进程
+    task_create(test_thread, "test", 5, KERNEL_USER);   //内核态进程
 }
 
 /**

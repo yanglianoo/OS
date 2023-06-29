@@ -66,13 +66,13 @@ static u32 free_pages = 0;   //空闲内存页数
 void memory_init(u32 magic, u32 addr)
 {
     u32 count = 0;
-    ards_t *ptr;
+
 
     // 如果是 onix loader 进入的内核
     if(magic == ONIX_MAGIC)
     {
         count = *(u32*)addr;
-        ptr = (ards_t *)(addr + 4);
+        ards_t *ptr = (ards_t *)(addr + 4);
         for (size_t i = 0; i < count; i++,ptr++)
         {
             LOGK("Memory base 0x%p size 0x%p type 0x%p \n",
@@ -291,8 +291,6 @@ void mapping_init()
     //把页目录项全部初始化为0
     memset(pde,0,PAGE_SIZE);
 
-#if 1
-
     idx_t index = 0;
 
     // kernel占两页,分配两个页表  0x2000 0x3000
@@ -308,7 +306,7 @@ void mapping_init()
         page_entry_t *dentry = &pde[didx];
         //初始化页目录项
         entry_init(dentry, IDX((u32)pte));
-        dentry->user = 0; // 只能被内核访问
+        //dentry->user = 0; // 只能被内核访问
 
         for (idx_t tidx = 0; tidx < 1024; tidx++, index++)
         {
@@ -320,7 +318,7 @@ void mapping_init()
             //初始化页表项，每个页表有1024各页表项，为0x2000 和 0x3000开始的两个页表进行初始化
             entry_init(tentry, index);
             //这里初始化 index = 0~1024 没太懂
-            tentry->user = 0;      // 只能被内核访问
+            //tentry->user = 0;      // 只能被内核访问
             memory_map[index] = 1; // 设置物理内存数组，该页被占用
         }
     }
@@ -329,27 +327,27 @@ void mapping_init()
     page_entry_t *entry = &pde[1023];
     entry_init(entry, IDX(KERNEL_PAGE_DIR));
 
-#else  // 内存映射测试代码
+  // 内存映射测试代码
     //页目录项第一项的值设为0 , 将页表物理页地址设为 KERNEL_PAGE_ENTRY
-    #define KERNEL_PAGE_ENTRY 0x201000
-    entry_init(&pde[0],IDX(KERNEL_PAGE_ENTRY));
+    // #define KERNEL_PAGE_ENTRY 0x201000
+    // entry_init(&pde[0],IDX(KERNEL_PAGE_ENTRY));
 
-    //初始化页表,页表的起始地址为 KERNEL_PAGE_ENTRY
-    page_entry_t *pte = (page_entry_t *)KERNEL_PAGE_ENTRY;
-    //清空页表
-    memset(pte,0,PAGE_SIZE);
+    // //初始化页表,页表的起始地址为 KERNEL_PAGE_ENTRY
+    // page_entry_t *pte = (page_entry_t *)KERNEL_PAGE_ENTRY;
+    // //清空页表
+    // memset(pte,0,PAGE_SIZE);
 
-    page_entry_t *entry;
-    for (size_t tidx = 0; tidx < 1024; tidx++)
-    {
-        //设置该页表
-        entry = &pte[tidx];
-        //初始化页表项,物理偏移地址设为 tidx ,即 index = tidx
-        entry_init(entry, tidx);
-        //标记该页被占用,一页为 4K, 1024个页 ,占用 4M
-        memory_map[tidx] = 1;
-    }
-#endif
+    // page_entry_t *entry;
+    // for (size_t tidx = 0; tidx < 1024; tidx++)
+    // {
+    //     //设置该页表
+    //     entry = &pte[tidx];
+    //     //初始化页表项,物理偏移地址设为 tidx ,即 index = tidx
+    //     entry_init(entry, tidx);
+    //     //标记该页被占用,一页为 4K, 1024个页 ,占用 4M
+    //     memory_map[tidx] = 1;
+    // }
+
 
     //设置cr3寄存器，将pde写入cr3寄存器
     set_cr3((u32)pde);

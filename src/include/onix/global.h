@@ -5,6 +5,7 @@
 
 #define GDT_SIZE 128
 
+/* 选择子编号，代码段，数据段，TSS段*/
 #define KERNEL_CODE_IDX 1
 #define KERNEL_DATA_IDX 2
 #define KERNEL_TSS_IDX 3
@@ -12,10 +13,12 @@
 #define USER_CODE_IDX 4
 #define USER_DATA_IDX 5
 
+/* 左移三位 乘以8 定义内核态的选择子*/
 #define KERNEL_CODE_SELECTOR (KERNEL_CODE_IDX << 3)
 #define KERNEL_DATA_SELECTOR (KERNEL_DATA_IDX << 3)
-#define KERNEL_TSS_SELECTOR (KERNEL_TSS_IDX << 3)
+#define KERNEL_TSS_SELECTOR (KERNEL_TSS_IDX << 3) 
 
+/* 定义用户态的选择子*/
 #define USER_CODE_SELECTOR (USER_CODE_IDX << 3 | 0b11)
 #define USER_DATA_SELECTOR (USER_DATA_IDX << 3 | 0b11)
 // 全局描述符

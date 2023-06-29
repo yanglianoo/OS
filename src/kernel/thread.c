@@ -31,25 +31,25 @@ void idle_thread()
     }
 }
 
-extern u32 keyboard_read(char *buf, u32 count);
-/**
- * @brief  初始化进程
- */
-void init_thread()
+static void real_init_thread()
 {
-    set_interrupt_state(true);
     u32 counter = 0;
 
     char ch;
     while (true)
     {
-        
-        bool intr = interrupt_disable();
-        // 去缓冲区读数据
-        keyboard_read(&ch,1);
-        printk("%c",ch);
-        set_interrupt_state(intr);
+        // asm volatile("in $0x92, %ax\n");
+        sleep(100);
+        // LOGK("%c\n", ch);
+        // printk("%c", ch);
     }
+}
+
+void init_thread()
+{
+    // set_interrupt_state(true);
+    char temp[100]; // 为栈顶有足够的空间
+    task_to_user_mode(real_init_thread);
 }
 
 /**

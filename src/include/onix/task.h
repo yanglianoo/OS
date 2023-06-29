@@ -40,6 +40,7 @@ typedef struct task_t
     u32 magic;              // 内核魔数，用于检测栈溢出
 } task_t;
 
+
 //ABI 的寄存器，进程切换之前保存，进程切换之后恢复
 typedef struct task_frame_t
 {
@@ -49,6 +50,38 @@ typedef struct task_frame_t
     u32 ebp;
     void (*eip)(void);
 } task_frame_t;
+
+// 中断帧
+typedef struct intr_frame_t
+{
+    u32 vector;
+
+    u32 edi;
+    u32 esi;
+    u32 ebp;
+    // 虽然 pushad 把 esp 也压入，但 esp 是不断变化的，所以会被 popad 忽略
+    u32 esp_dummy;
+
+    u32 ebx;
+    u32 edx;
+    u32 ecx;
+    u32 eax;
+
+    u32 gs;
+    u32 fs;
+    u32 es;
+    u32 ds;
+
+    u32 vector0;
+
+    u32 error;
+
+    u32 eip;
+    u32 cs;
+    u32 eflags;
+    u32 esp;
+    u32 ss;
+} intr_frame_t;
 
 task_t *running_task();
 void schedule();
@@ -61,4 +94,7 @@ void task_unblock(task_t *task);
 
 extern void task_sleep(u32 ms);
 extern void task_wakeup();
+
+void task_to_user_mode(target_t target);
+
 #endif
