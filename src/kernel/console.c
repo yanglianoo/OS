@@ -184,14 +184,15 @@ static void command_lf()
 
 extern void start_beep();
 //在显示器上写入字符串
-void console_write(char *buf,u32 count)
+int32 console_write(char *buf,u32 count)
 {
     // //禁止中断
     bool intr = interrupt_disable();
     
     char ch;
     char *ptr = (char *)pos;
-    while (count--)
+    int32 nr = 0;
+    while (nr++ < count)
     {
         ch = *buf++;
         switch (ch)

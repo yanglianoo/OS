@@ -11,6 +11,7 @@
 #include <onix/debug.h>
 #include <onix/syscall.h>
 #include <onix/task.h>
+#include <onix/console.h>
 #define LOGK(fmt,args...) DEBUGK(fmt, ##args)
 
 //支持 最大64个系统调用
@@ -56,7 +57,16 @@ static u32 sys_test()
     return 255;
 }
 
-
+int32 sys_write(fd_t fd, char *buf, u32 len)
+{
+    if (fd == stdout || fd == stderr)
+    {
+        return console_write(buf, len);
+    }
+    // todo
+    panic("write!!!!");
+    return 0;
+}
 
 
 void syscall_init()
@@ -72,5 +82,7 @@ void syscall_init()
     syscall_table[SYS_NR_SLEEP] = task_sleep;
     
     syscall_table[SYS_NR_YIELD] = task_yield;
+
+    syscall_table[SYS_NR_WRITE] = sys_write;
 }
 
