@@ -12,6 +12,7 @@
 #include <onix/thread.h>
 #include <onix/mutex.h>
 #include <onix/stdio.h>
+#include <onix/arena.h>
 #define LOGK(fmt, args...) DEBUGK(fmt, ##args)
 
 /**
@@ -43,7 +44,7 @@ static void real_init_thread()
         sleep(100);
         // LOGK("%c\n", ch);
         // printk("%c", ch);
-        printf("task is in user mode %d\n", counter++);
+       // printf("task is in user mode %d\n", counter++);
     }
 }
 
@@ -65,7 +66,19 @@ void test_thread()
     while (true)
     {
         
-       // LOGK("test task %d....\n", counter++);
-        sleep(500);
+        void *ptr = kmalloc(1200);
+        LOGK("kmalloc 0x%p...\n",ptr);
+        kfree(ptr);
+
+        ptr = kmalloc(1024);
+        LOGK("kmalloc 0x%p...\n",ptr);
+        kfree(ptr);
+
+
+        ptr = kmalloc(54);
+        LOGK("kmalloc 0x%p...\n",ptr);
+        kfree(ptr);
+
+        sleep(5000);
     }
 }

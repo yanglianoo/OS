@@ -133,7 +133,6 @@ void schedule()
     //如果当前任务状态是执行，则将此任务状态置为就绪
     if(current->state == TASK_RUNNING)
     {
-        
         current->state = TASK_READY;
     }
 

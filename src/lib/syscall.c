@@ -66,7 +66,7 @@ void yield()
 
 /**
  * @brief  slepp 系统调用
- * @param  ms: 睡眠实践 ms
+ * @param  ms: 睡眠时间 ms
  */
 void sleep(u32 ms)
 {

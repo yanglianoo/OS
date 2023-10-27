@@ -5,6 +5,7 @@
 
 extern void memory_map_init();
 extern void mapping_init();
+extern void arena_init();
 extern void interrupt_init();
 extern void clock_init();
 extern void time_init();
@@ -23,6 +24,8 @@ void kernel_init()
     memory_map_init(); 
     //初始化内存映射
     mapping_init();
+    //
+    arena_init();
     //中断初始化
     interrupt_init();
     // //时钟初始化
@@ -35,5 +38,5 @@ void kernel_init()
     task_init();
     syscall_init();
     set_interrupt_state(true);
-
+    
 }

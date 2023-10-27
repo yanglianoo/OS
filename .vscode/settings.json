@@ -1,7 +1,0 @@
-{
-    "files.associations": {
-        "assert.h": "c",
-        "types.h": "c",
-        "mutex.h": "c"
-    }
-}
