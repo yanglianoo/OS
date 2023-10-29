@@ -7,6 +7,7 @@
 #include <onix/string.h>
 #include <onix/bitmap.h>
 #include <onix/printk.h>
+#include <onix/task.h>
 #include <onix/multiboot2.h>
 #define LOGK(fmt, args...) DEBUGK(fmt, ##args)
 
@@ -14,6 +15,7 @@
 #define ZONE_VALID 1   //ards  可用内存区域
 #define ZONE_RESERVED 2 //ards 不可用区域
 
+#define PDE_MASK 0xFFC00000
 /**
  * @brief  宏函数 IDX 用于获取给定地址 addr 所在的物理页的索引。
  *         在 x86 架构下，一个物理页的大小通常是 4KB（2^12），
@@ -317,7 +319,7 @@ void mapping_init()
             page_entry_t *tentry = &pte[tidx];
             //初始化页表项，每个页表有1024各页表项，为0x2000 和 0x3000开始的两个页表进行初始化
             entry_init(tentry, index);
-            //这里初始化 index = 0~1024 没太懂
+            //这里初始化 index = 0~1024 没太懂 
             //tentry->user = 0;      // 只能被内核访问
             memory_map[index] = 1; // 设置物理内存数组，该页被占用
         }
@@ -327,7 +329,7 @@ void mapping_init()
     page_entry_t *entry = &pde[1023];
     entry_init(entry, IDX(KERNEL_PAGE_DIR));
 
-  // 内存映射测试代码
+  // 内存映射测试代码/
     //页目录项第一项的值设为0 , 将页表物理页地址设为 KERNEL_PAGE_ENTRY
     // #define KERNEL_PAGE_ENTRY 0x201000
     // entry_init(&pde[0],IDX(KERNEL_PAGE_ENTRY));
@@ -371,10 +373,27 @@ static page_entry_t *get_pde()
     return (page_entry_t *)(0xfffff000);
 }
 //获取页表 pte
-static page_entry_t *get_pte(u32 vaddr)
+static page_entry_t *get_pte(u32 vaddr , bool create)
 {
 
-    return (page_entry_t *)(0xffc00000 | (DIDX(vaddr) << 12 ));
+    page_entry_t *pde = get_pde();
+    u32 idx = DIDX(vaddr);
+
+    page_entry_t *entry = &pde[idx];
+
+    assert(create || (!create && entry->present));
+
+    page_entry_t *table = (page_entry_t *)(PDE_MASK | (idx << 12));
+
+    if(!entry->present)
+    {
+        LOGK("Get and create page table entry for%p\n",vaddr);
+        u32 page = get_page();
+        entry_init(entry, IDX(page));
+        memset(table, 0 ,PAGE_SIZE);
+    }
+    
+    return table;
 }
 
 /**
@@ -508,20 +527,61 @@ void memory_test()
 
 }
 
-// void memory_test()
-// {
-//     u32 *pages = (u32 *)(0x200000);
-//     u32 count = 0x6fe;
-//     for (size_t i = 0; i < count; i++)
-//     {
-//         pages[i] = alloc_kpage(1);
-//         LOGK("0x%x\n",i);
-//     }
+void link_page(u32 vaddr)
+{
+    ASSERT_PAGE(vaddr);
+    page_entry_t *pte = get_pte(vaddr,true);
+    page_entry_t *entry = &pte[TIDX(vaddr)];
 
-//     for (size_t i = 0; i < count; i++)
-//     {
-//         free_kpage(pages[i],1);
-//     }
+    task_t *task = running_task();
+    bitmap_t *map = task->vmap;
+    u32 index = IDX(vaddr);
+
+    if(entry->present)
+    {
+        assert(bitmap_test(map,index));
+    }
+
+    assert(!bitmap_test(map, index));
+    bitmap_set(map, index ,true);
+
+    u32 paddr = get_page();
+    entry_init(entry ,IDX(paddr));
+    flush_tlb(vaddr);
+    LOGK(" LINK from 0x%p to 0x%p\n", vaddr ,paddr);
+}
+
+void unlink_page(u32 vaddr)
+{
     
-// }
+    ASSERT_PAGE(vaddr);
+
+    page_entry_t *pte = get_pte(vaddr, true);
+    page_entry_t *entry = &pte[TIDX(vaddr)];
+
+    task_t *task = running_task();
+    bitmap_t *map = task->vmap;
+    u32 index = IDX(vaddr);
+
+    if (!entry->present)
+    {
+        assert(!bitmap_test(map, index));
+        return;
+    }
+
+    assert(entry->present && bitmap_test(map, index));
+
+    entry->present = false;
+    bitmap_set(map, index, false);
+
+    u32 paddr = PAGE(entry->index);
+
+    DEBUGK("UNLINK from 0x%p to 0x%p\n", vaddr, paddr);
+    if (memory_map[entry->index] == 1)
+    {
+        put_page(paddr);
+    }
+    flush_tlb(vaddr);
+}
+
 #endif
