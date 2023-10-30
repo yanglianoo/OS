@@ -14,6 +14,9 @@
 //内核页目录索引
 #define KERNEL_PAGE_DIR 0x1000
 
+#define USER_STACK_SIZE 0x200000
+//用户栈底
+#define USER_STACK_BOTTOM (USER_STACK_TOP - USER_STACK_SIZE)
 //内核页表索引
 static u32 KERNEL_PAGE_TABLE[] = {
     0x2000,
@@ -40,7 +43,8 @@ typedef struct page_entry_t
 } _packed page_entry_t;
 
 
-
+// 得到 cr2 寄存器
+u32 get_cr2();
 // 得到 cr3 寄存器
 u32 get_cr3();
 

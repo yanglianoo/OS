@@ -236,6 +236,10 @@ static void put_page(u32 addr)
     LOGK("PUT page 0x%p\n",addr);
 }
 
+u32 get_cr2()
+{
+    asm volatile("movl %cr2, %eax\n");
+}
 // 得到 cr3 寄存器
 u32 get_cr3()
 {
@@ -479,53 +483,53 @@ void memory_test()
     }
 }
 #else
-void memory_test()
-{
+// void memory_test()
+// {
 
 
-    // 将 20 M 0x1400000 内存映射到 64M 0x4000000 的位置
+//     // 将 20 M 0x1400000 内存映射到 64M 0x4000000 的位置
 
-    // 我们还需要一个页表，0x900000
+//     // 我们还需要一个页表，0x900000
 
     
-    u32 vaddr = 0x4000000; // 线性地址几乎可以是任意的，虚拟地址
-    u32 paddr = 0x1400000; // 物理地址必须要确定存在
-    u32 table = 0x900000;  // 页表也必须是物理地址
+//     u32 vaddr = 0x4000000; // 线性地址几乎可以是任意的，虚拟地址
+//     u32 paddr = 0x1400000; // 物理地址必须要确定存在
+//     u32 table = 0x900000;  // 页表也必须是物理地址
 
-    page_entry_t *pde = get_pde();
-    printk("pde:0x%p\n",pde);
-    //获取到vaddr对应的页目录项的地址，指向了对应的页表，虚拟地址高10位为页目录表的偏移地址
-    page_entry_t *dentry = &pde[DIDX(vaddr)];
-    printk("dentry:0x%p\n",dentry);
-    //初始化vaddr页目录的页目录项，0x1000+0x10= 0x1010 这一项指向的页表物理地址为 0x900000 IDX(0x900000) = 0x900 第0x900页
-    entry_init(dentry, IDX(table));
-    printk("*dentry:0x%p\n",*dentry);
-    //获取到页表所在物理地址 0x900 ，页表存在 0x900000处
-    page_entry_t *pte = get_pte(vaddr); 
-    printk("pte:0x%p\n",pte);
-    printk("*pte:0x%p\n",*pte);
-    //获取到实际物理页地址 TIDX(vaddr) = 0 ，将 tentry->pte[0]
-    page_entry_t *tentry = &pte[TIDX(vaddr)];
-    printk("TIDX(vaddr):0x%p\n",TIDX(vaddr));
-    printk("tentry:0x%p\n",tentry);
-    //设置 pte[0] = IDX(paddr) = IDX(0x1400000) = 0x1400 页
-    entry_init(tentry, IDX(paddr));
-    printk("*tentry:0x%p\n",*tentry);
+//     page_entry_t *pde = get_pde();
+//     printk("pde:0x%p\n",pde);
+//     //获取到vaddr对应的页目录项的地址，指向了对应的页表，虚拟地址高10位为页目录表的偏移地址
+//     page_entry_t *dentry = &pde[DIDX(vaddr)];
+//     printk("dentry:0x%p\n",dentry);
+//     //初始化vaddr页目录的页目录项，0x1000+0x10= 0x1010 这一项指向的页表物理地址为 0x900000 IDX(0x900000) = 0x900 第0x900页
+//     entry_init(dentry, IDX(table));
+//     printk("*dentry:0x%p\n",*dentry);
+//     //获取到页表所在物理地址 0x900 ，页表存在 0x900000处
+//     page_entry_t *pte = get_pte(vaddr); 
+//     printk("pte:0x%p\n",pte);
+//     printk("*pte:0x%p\n",*pte);
+//     //获取到实际物理页地址 TIDX(vaddr) = 0 ，将 tentry->pte[0]
+//     page_entry_t *tentry = &pte[TIDX(vaddr)];
+//     printk("TIDX(vaddr):0x%p\n",TIDX(vaddr));
+//     printk("tentry:0x%p\n",tentry);
+//     //设置 pte[0] = IDX(paddr) = IDX(0x1400000) = 0x1400 页
+//     entry_init(tentry, IDX(paddr));
+//     printk("*tentry:0x%p\n",*tentry);
 
 
-    // 0x4000000 = 0000 0100 0000 0000 0000 0000 0000 0000
-    // 高10位 = 0x10 页目录项地址为 ： 0x1000 + 0x10 = 0x1010 -> 0x900
-    // 中10位 = 0x0  页表项地址为  ： 0x900 + 0 = 0x900 -> 0x1400 
-    // 低10位 = 0x0  最后的物理地址为 ： 0x1400 + 0 = 0x1400 页
-    char *ptr = (char *)(0x4000000);
-    ptr[0] = 'a';
-    entry_init(tentry, IDX(0x1500000));
+//     // 0x4000000 = 0000 0100 0000 0000 0000 0000 0000 0000
+//     // 高10位 = 0x10 页目录项地址为 ： 0x1000 + 0x10 = 0x1010 -> 0x900
+//     // 中10位 = 0x0  页表项地址为  ： 0x900 + 0 = 0x900 -> 0x1400 
+//     // 低10位 = 0x0  最后的物理地址为 ： 0x1400 + 0 = 0x1400 页
+//     char *ptr = (char *)(0x4000000);
+//     ptr[0] = 'a';
+//     entry_init(tentry, IDX(0x1500000));
 
-    //刷新页表
-    flush_tlb(vaddr);
-    ptr[2] = 'b';
+//     //刷新页表
+//     flush_tlb(vaddr);
+//     ptr[2] = 'b';
 
-}
+// }
 
 void link_page(u32 vaddr)
 {
@@ -577,11 +581,62 @@ void unlink_page(u32 vaddr)
     u32 paddr = PAGE(entry->index);
 
     DEBUGK("UNLINK from 0x%p to 0x%p\n", vaddr, paddr);
-    if (memory_map[entry->index] == 1)
-    {
-        put_page(paddr);
-    }
+
+    put_page(paddr);
+
     flush_tlb(vaddr);
 }
 
+page_entry_t *copy_pde()
+{
+    task_t *task = running_task();
+    page_entry_t *pde = (page_entry_t *)alloc_kpage(1);
+    memcpy(pde, (void *)task->pde,PAGE_SIZE);
+
+    page_entry_t *entry = &pde[1023];
+    entry_init(entry , IDX(pde));
+
+    return pde;
+}
+
+typedef struct page_error_code_t
+{
+    u8 present : 1;
+    u8 write : 1;
+    u8 user : 1;
+    u8 reserved0 : 1;
+    u8 fetch : 1;
+    u8 protection : 1;
+    u8 shadow : 1;
+    u16 reserved1 : 8;
+    u8 sgx : 1;
+    u16 reserved2;
+} _packed page_error_code_t;
+
+void page_fault(
+    u32 vector,
+    u32 edi, u32 esi, u32 ebp, u32 esp,
+    u32 ebx, u32 edx, u32 ecx, u32 eax,
+    u32 gs, u32 fs, u32 es, u32 ds,
+    u32 vector0, u32 error, u32 eip, u32 cs, u32 eflags)
+{
+    assert(vector == 0xe);
+    u32 vaddr = get_cr2();
+    LOGK("fault address 0x%p\n", vaddr);
+
+    page_error_code_t *code = (page_error_code_t *)&error;
+    task_t *task = running_task();
+
+    assert(KERNEL_MEMORY_SIZE <= vaddr < USER_STACK_TOP);
+
+    if (!code->present && (vaddr > USER_STACK_BOTTOM))
+    {
+        u32 page = PAGE(IDX(vaddr));
+        link_page(page);
+        // BMB;
+        return;
+    }
+
+    panic("page fault!!!");
+}
 #endif

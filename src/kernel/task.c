@@ -92,10 +92,16 @@ static task_t *task_search(task_state_t state)
 }
 
 
-// 激活任务,维护全局唯一的tss段，如果下一个切换的任务的是用户态任务，则将下一个任务的栈顶指针保存到esp0中
+// 激活任务,维护全局唯一的tss段，如果下一个切换的任务的是用户态任务，则将下一个任务的内核栈顶指针保存到esp0中
 void task_activate(task_t *task)
 {
     assert(task->magic == ONIX_MAGIC);
+
+    //切换页表
+    if(task->pde != get_cr3())
+    {
+        set_cr3(task->pde);
+    }
 
     if (task->uid != KERNEL_USER)
     {
@@ -147,7 +153,7 @@ void schedule()
     next->state = TASK_RUNNING;
     if(next == current)
         return;
-    /* 有问题 我觉得应该是保存当前内核态的栈指针 */
+    /* 将tss任务状态段的设置为下一个任务的内核栈的指针，当任务切换时，cpu会自动去tss中读取栈指针 */
     task_activate(next);
     //切换到下一个任务，此函数用汇编实现，遵循x86 的ABI规定
     task_switch(next);
@@ -323,12 +329,15 @@ void task_yield()
 void task_to_user_mode(target_t target)
 {
     task_t *task = running_task();
-
+    // 创建用户进程虚拟内存位图
     task->vmap = kmalloc(sizeof(bitmap_t));
     void *buf = (void *)alloc_kpage(1);
     bitmap_init(task->vmap , buf , PAGE_SIZE , KERNEL_MEMORY_SIZE / PAGE_SIZE);
 
-    
+    //创建用户进程页表
+    task->pde = (u32)copy_pde();
+    set_cr3(task->pde);
+
     u32 addr = (u32)task + PAGE_SIZE;
 
     addr -= sizeof(intr_frame_t);
@@ -353,11 +362,11 @@ void task_to_user_mode(target_t target)
 
     iframe->error = ONIX_MAGIC;
 
-    u32 stack3 = alloc_kpage(1); // todo replace to user stack
+   // u32 stack3 = alloc_kpage(1); // todo replace to user stack
 
     iframe->eip = (u32)target;
     iframe->eflags = (0 << 12 | 0b10 | 1 << 9);
-    iframe->esp = stack3 + PAGE_SIZE;
+    iframe->esp = USER_STACK_TOP;
 
     asm volatile(
         "movl %0, %%esp\n"

@@ -33,18 +33,23 @@ void idle_thread()
     }
 }
 
-static void real_init_thread()
+void test_recursion()
+{
+    char tmp[0x400];
+    test_recursion();
+}
+static void user_init_thread()
 {
     u32 counter = 0;
 
     char ch;
     while (true)
     {
-        // asm volatile("in $0x92, %ax\n");
-        sleep(100);
-        // LOGK("%c\n", ch);
-        // printk("%c", ch);
-       // printf("task is in user mode %d\n", counter++);
+        // test();
+        printf("task is in user mode %d\n", counter++);
+        BMB;
+        test_recursion();
+        sleep(1000);
     }
 }
 
@@ -52,7 +57,7 @@ void init_thread()
 {
     // set_interrupt_state(true);
     char temp[100]; // 为栈顶有足够的空间
-    task_to_user_mode(real_init_thread);
+    task_to_user_mode(user_init_thread);
 }
 
 /**
