@@ -12,10 +12,11 @@
 #include <onix/syscall.h>
 #include <onix/task.h>
 #include <onix/console.h>
+#include <onix/memory.h>
 #define LOGK(fmt,args...) DEBUGK(fmt, ##args)
 
 //支持 最大64个系统调用
-#define SYSCALL_SIZE 64
+#define SYSCALL_SIZE 256
 
 // 系统调用函数数组
 handler_t syscall_table[SYSCALL_SIZE];
@@ -82,6 +83,8 @@ void syscall_init()
     syscall_table[SYS_NR_SLEEP] = task_sleep;
     
     syscall_table[SYS_NR_YIELD] = task_yield;
+
+    syscall_table[SYS_NR_BRK] = sys_brk;
 
     syscall_table[SYS_NR_WRITE] = sys_write;
 }
